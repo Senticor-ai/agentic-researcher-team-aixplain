@@ -1,0 +1,100 @@
+{
+  "@context": "https://schema.org",
+  "@type": "ResearchProject",
+  "name": "Lagebericht zur Kinderarmut in Baden-Württemberg",
+  "description": "OSINT research on child poverty report stakeholders in Baden-Württemberg",
+  "dateCreated": "2025-10-08",
+  "goals": [
+    "Identify NGOs working on child poverty in Baden-Württemberg",
+    "Find press organizations covering child poverty issues",
+    "Discover think tanks researching child poverty",
+    "Locate relevant federal and state publications",
+    "Extract key stakeholder organizations and contacts"
+  ],
+  "stakeholders": {
+    "organizations": [
+      {
+        "@type": "Organization",
+        "name": "Ministerium für Soziales, Gesundheit und Integration Baden-Württemberg",
+        "description": "State ministry responsible for social affairs and integration",
+        "url": "https://sozialministerium.baden-wuerttemberg.de",
+        "category": "government",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Ministry"
+        }
+      },
+      {
+        "@type": "Organization",
+        "name": "Example NGO (to be discovered)",
+        "description": "NGO working on child poverty issues",
+        "url": "https://example-ngo.org",
+        "category": "NGO"
+      },
+      {
+        "@type": "Organization",
+        "name": "Example Think Tank (to be discovered)",
+        "description": "Research institute studying child poverty",
+        "url": "https://example-thinktank.org",
+        "category": "think_tank"
+      },
+      {
+        "@type": "Organization",
+        "name": "Example Press Organization (to be discovered)",
+        "description": "Media outlet covering social issues",
+        "url": "https://example-press.org",
+        "category": "press"
+      }
+    ],
+    "persons": [
+      {
+        "@type": "Person",
+        "name": "Dr. Manfred Lucha",
+        "jobTitle": "Minister für Soziales, Gesundheit und Integration",
+        "affiliation": {
+          "@type": "Organization",
+          "name": "Ministerium für Soziales, Gesundheit und Integration Baden-Württemberg"
+        },
+        "url": "https://sozialministerium.baden-wuerttemberg.de/de/ministerium/minister/",
+        "description": "State minister responsible for social affairs"
+      },
+      {
+        "@type": "Person",
+        "name": "Example Expert (to be discovered)",
+        "jobTitle": "Director",
+        "affiliation": "Example Organization",
+        "description": "Expert on child poverty issues"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "@type": "WebPage",
+      "name": "Ministry Website - Social Affairs",
+      "url": "https://sozialministerium.baden-wuerttemberg.de",
+      "category": "government",
+      "description": "Official state ministry website"
+    },
+    {
+      "@type": "GovernmentService",
+      "name": "Federal Publications on Child Poverty",
+      "url": "https://www.bmfsfj.de",
+      "category": "federal_government",
+      "description": "Federal Ministry for Family Affairs publications"
+    },
+    {
+      "@type": "WebPage",
+      "name": "Statistical Office Baden-Württemberg",
+      "url": "https://www.statistik-bw.de",
+      "category": "government",
+      "description": "Official statistics on poverty and social indicators"
+    }
+  ],
+  "researchMetadata": {
+    "status": "completed",
+    "agentTeamId": "to-be-generated",
+    "executionDate": "2025-10-08",
+    "interactionLimit": 50,
+    "meceStrategy": "depth_first"
+  }
+}

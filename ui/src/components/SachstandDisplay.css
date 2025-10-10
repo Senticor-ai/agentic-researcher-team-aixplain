@@ -1,0 +1,199 @@
+/* Sachstand Display Component */
+
+.sachstand-display {
+  padding: 1.5rem !important;
+}
+
+.sachstand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.sachstand-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sachstand-title-section h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #182026;
+  font-weight: 600;
+}
+
+.sachstand-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sachstand-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Callouts */
+.remaining-work-callout,
+.error-callout {
+  margin-bottom: 1.5rem;
+}
+
+.remaining-work-callout ul,
+.error-callout ul {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.5rem;
+}
+
+.remaining-work-callout li,
+.error-callout li {
+  margin-bottom: 0.25rem;
+}
+
+/* Metadata */
+.sachstand-metadata {
+  background-color: #f5f8fa;
+  border: 1px solid #d8e1e8;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metadata-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.metadata-row:last-child {
+  margin-bottom: 0;
+}
+
+.metadata-label {
+  font-weight: 600;
+  color: #5c7080;
+  min-width: 100px;
+}
+
+.metadata-value {
+  color: #182026;
+  flex: 1;
+}
+
+/* Content */
+.sachstand-content {
+  border: 1px solid #d8e1e8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sachstand-content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f5f8fa;
+  border-bottom: 1px solid #d8e1e8;
+}
+
+.sachstand-content-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #182026;
+}
+
+/* JSON Viewer */
+.json-viewer,
+.json-preview {
+  background-color: #ffffff;
+  max-height: 600px;
+  overflow: auto;
+}
+
+.json-content {
+  margin: 0;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #182026;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: #ffffff;
+}
+
+.json-preview .json-content {
+  color: #5c7080;
+}
+
+/* Syntax Highlighting (Basic) */
+.json-content {
+  /* Property names */
+  --json-property: #0066cc;
+  /* String values */
+  --json-string: #008000;
+  /* Number values */
+  --json-number: #ff6600;
+  /* Boolean/null */
+  --json-keyword: #cc0000;
+}
+
+/* Scrollbar Styling */
+.json-viewer::-webkit-scrollbar,
+.json-preview::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.json-viewer::-webkit-scrollbar-track,
+.json-preview::-webkit-scrollbar-track {
+  background: #f5f8fa;
+}
+
+.json-viewer::-webkit-scrollbar-thumb,
+.json-preview::-webkit-scrollbar-thumb {
+  background: #d8e1e8;
+  border-radius: 4px;
+}
+
+.json-viewer::-webkit-scrollbar-thumb:hover,
+.json-preview::-webkit-scrollbar-thumb:hover {
+  background: #c5cbd3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sachstand-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sachstand-actions {
+    flex-direction: column;
+  }
+
+  .sachstand-actions button {
+    width: 100%;
+  }
+
+  .metadata-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .metadata-label {
+    min-width: auto;
+  }
+
+  .json-viewer,
+  .json-preview {
+    max-height: 400px;
+  }
+}

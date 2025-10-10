@@ -1,0 +1,27 @@
+[project]
+name = "honeycomb-osint"
+version = "0.1.0"
+description = "OSINT Agent Team System using aixplain"
+authors = [
+    {name = "Ministry Team"}
+]
+readme = "README.md"
+requires-python = "^3.12"
+dependencies = [
+    "aixplain (>=0.2.35,<0.3.0)",
+    "fastapi (>=0.118.1,<0.119.0)",
+    "uvicorn (>=0.37.0,<0.38.0)",
+    "pydantic (>=2.12.0,<3.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "websockets (>=15.0.1,<16.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]

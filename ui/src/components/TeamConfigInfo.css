@@ -1,0 +1,346 @@
+/* Team Config Info Component */
+
+.team-config-info {
+  padding: 1.5rem !important;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, #f5f8fa 0%, #ebf1f5 100%);
+  border: 2px solid #137cbd;
+}
+
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.config-title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.config-title-section h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #182026;
+  font-weight: 600;
+}
+
+/* Summary Section */
+.config-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #ffffff;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #d8e1e8;
+}
+
+.summary-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  color: #5c7080;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 1rem;
+  color: #182026;
+  font-weight: 600;
+}
+
+/* Details Section */
+.config-details {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #d8e1e8;
+}
+
+.config-section {
+  margin-bottom: 2rem;
+}
+
+.config-section:last-child {
+  margin-bottom: 0;
+}
+
+.config-section h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #137cbd;
+}
+
+.section-description {
+  margin: 0 0 1rem 0;
+  color: #5c7080;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Agents Grid */
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.agent-card {
+  background-color: #ffffff;
+  border: 1px solid #d8e1e8;
+  border-left: 4px solid #137cbd;
+  border-radius: 4px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.agent-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.agent-card.custom-agent {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f8fa 100%);
+}
+
+.agent-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.agent-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.agent-info {
+  flex: 1;
+}
+
+.agent-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #182026;
+  margin-bottom: 0.25rem;
+}
+
+.agent-role {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.agent-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.agent-description {
+  color: #5c7080;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.agent-model {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.agent-strategy,
+.agent-languages {
+  color: #5c7080;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f5f8fa;
+  border-radius: 3px;
+}
+
+.agent-strategy strong,
+.agent-languages strong {
+  color: #182026;
+  font-weight: 600;
+}
+
+.agent-capabilities {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #d8e1e8;
+}
+
+.agent-capabilities strong {
+  display: block;
+  color: #182026;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.agent-capabilities ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.agent-capabilities li {
+  color: #5c7080;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 0.25rem;
+}
+
+/* Coordination Section */
+.coordination-info {
+  background-color: #ffffff;
+  border: 1px solid #d8e1e8;
+  border-radius: 4px;
+  padding: 1.5rem;
+}
+
+.coordination-note {
+  background-color: #fef5e7;
+  border: 1px solid #f39c12;
+  border-left: 4px solid #f39c12;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  color: #182026;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.coordination-note strong {
+  color: #f39c12;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.roles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.role-item {
+  background-color: #f5f8fa;
+  border: 1px solid #d8e1e8;
+  border-left: 3px solid #137cbd;
+  border-radius: 4px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.role-item:hover {
+  background-color: #ebf1f5;
+  border-left-width: 4px;
+}
+
+.role-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.role-agent {
+  font-weight: 600;
+  color: #182026;
+  font-size: 1rem;
+}
+
+.role-responsibility {
+  color: #5c7080;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.role-note {
+  color: #137cbd;
+  font-size: 0.85rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Settings Grid */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  background-color: #ffffff;
+  border: 1px solid #d8e1e8;
+  border-radius: 4px;
+  padding: 1.5rem;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.setting-label {
+  font-size: 0.875rem;
+  color: #5c7080;
+  font-weight: 500;
+}
+
+.setting-value {
+  font-size: 1rem;
+  color: #182026;
+  font-weight: 600;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .config-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .config-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .agents-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .role-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}

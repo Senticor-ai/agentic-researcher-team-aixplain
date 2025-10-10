@@ -1,0 +1,80 @@
+/* Create Team Modal - Blueprint.js Bright Mode */
+
+.create-team-dialog .bp5-dialog {
+  width: 600px;
+  max-width: 90vw;
+  padding-bottom: 0;
+}
+
+.create-team-dialog .bp5-dialog-body {
+  margin: 0;
+  padding: 20px;
+}
+
+.create-team-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bp5-form-group {
+  margin-bottom: 20px;
+}
+
+.bp5-form-group:last-of-type {
+  margin-bottom: 20px;
+}
+
+/* Add spacing for callouts */
+.create-team-form .bp5-callout {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Helper text styling */
+.bp5-form-helper-text {
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 5px;
+}
+
+/* Label styling */
+.bp5-label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+/* Input and textarea spacing */
+.bp5-input-group,
+.bp5-input {
+  margin-top: 5px;
+}
+
+/* Footer spacing */
+.create-team-dialog .bp5-dialog-footer {
+  margin: 0;
+  padding: 15px 20px;
+  border-top: 1px solid #d8e1e8;
+  background-color: #f5f8fa;
+}
+
+.bp5-dialog-footer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .create-team-dialog .bp5-dialog {
+    width: 95vw;
+    margin: 1rem;
+  }
+  
+  .create-team-dialog .bp5-dialog-body {
+    padding: 15px;
+  }
+  
+  .create-team-dialog .bp5-dialog-footer {
+    padding: 12px 15px;
+  }
+}

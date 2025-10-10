@@ -1,0 +1,74 @@
+/* Global Styles - Blueprint.js Bright Mode */
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light;
+  color: #182026;
+  background-color: #f5f8fa;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #f5f8fa;
+}
+
+a {
+  font-weight: 500;
+  color: #137cbd;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #106ba3;
+  text-decoration: underline;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #182026;
+  font-weight: 600;
+}
+
+code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background-color: #f5f8fa;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+/* Blueprint.js overrides for consistency */
+.bp5-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  background-color: #ffffff;
+}
+
+.bp5-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.bp5-html-table {
+  width: 100%;
+}
+
+.bp5-html-table.bp5-html-table-striped tbody tr:nth-child(odd) td {
+  background-color: #ffffff;
+}
+
+.bp5-html-table.bp5-html-table-striped tbody tr:nth-child(even) td {
+  background-color: #f5f8fa;
+}
