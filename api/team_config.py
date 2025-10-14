@@ -129,6 +129,11 @@ class TeamConfig:
         # Get instructions from separate file
         system_prompt = get_search_agent_instructions(topic)
         
+        # Log a snippet of the instructions to verify format
+        if "OUTPUT FORMAT" in system_prompt:
+            format_section = system_prompt[system_prompt.index("OUTPUT FORMAT"):system_prompt.index("OUTPUT FORMAT")+200]
+            logger.info(f"Search Agent instructions include: {format_section}...")
+        
         # Enhance instructions with fallback strategies
         system_prompt = enhance_instructions(topic, system_prompt)
         
@@ -205,12 +210,17 @@ class TeamConfig:
         
         # Sanitize team name (only alphanumeric, spaces, hyphens, brackets allowed)
         import re
+        import uuid
         sanitized_topic = re.sub(r'[^a-zA-Z0-9 \-\(\)]', '', topic[:30])
+        
+        # Add unique identifier to force new team creation (avoid aixplain caching)
+        # Use only alphanumeric characters (no special chars)
+        unique_id = str(uuid.uuid4()).replace('-', '')[:8]
         
         # Create team with built-in micro agents
         # NOTE: We do NOT define WorkflowTask - let Mentalist plan dynamically
         team = TeamAgentFactory.create(
-            name=f"OSINT Team - {sanitized_topic}",
+            name=f"OSINT Team - {sanitized_topic} ({unique_id})",
             description=f"OSINT research team for topic: {topic}",
             instructions=mentalist_instructions,
             agents=user_agents,  # User-defined agents (no WorkflowTask)
@@ -252,9 +262,10 @@ class TeamConfig:
                 prompt += f"{i}. {goal}\n"
             prompt += "\n"
         
-        prompt += "Please provide:\n"
-        prompt += "1. A list of Person entities with their properties and sources\n"
-        prompt += "2. A list of Organization entities with their properties and sources\n"
-        prompt += "3. Ensure each entity has source URLs with excerpts\n"
+        prompt += "Please provide a comprehensive report with:\n"
+        prompt += "1. Person entities with their roles, descriptions, and source URLs\n"
+        prompt += "2. Organization entities with their descriptions and source URLs\n"
+        prompt += "3. Real source URLs with relevant excerpts for each entity\n"
+        prompt += "\nNote: The Search Agent will handle the formatting. Focus on finding comprehensive, accurate information.\n"
         
         return prompt

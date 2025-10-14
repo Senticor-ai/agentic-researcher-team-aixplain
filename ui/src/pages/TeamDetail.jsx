@@ -572,6 +572,41 @@ function TeamDetail() {
       </div>
 
       <div className="team-content">
+        {/* Error Details Section - Show if there's an error */}
+        {team.agent_response?.output && team.agent_response.output.includes('Error Code:') && (
+          <Card className="content-section error-details-section">
+            <Callout intent={Intent.DANGER} title="Agent Execution Error" icon="error">
+              <p>The agent encountered an error during execution. See details below:</p>
+            </Callout>
+            
+            <div style={{ marginTop: '1rem' }}>
+              <h4>Error Output:</h4>
+              <pre className="error-output">
+                {team.agent_response.output}
+              </pre>
+            </div>
+
+            {team.agent_response.data?.input && (
+              <div style={{ marginTop: '1rem' }}>
+                <h4>Agent Input:</h4>
+                <pre className="agent-input">
+                  {typeof team.agent_response.data.input === 'string' 
+                    ? team.agent_response.data.input 
+                    : JSON.stringify(team.agent_response.data.input, null, 2)}
+                </pre>
+              </div>
+            )}
+
+            <div style={{ marginTop: '1rem' }}>
+              <Callout intent={Intent.WARNING} title="Debugging Information">
+                <p><strong>Team ID (aixplain):</strong> {team.agent_response.data?.session_id || 'N/A'}</p>
+                <p><strong>Intermediate Steps:</strong> {team.agent_response.intermediate_steps?.length || 0}</p>
+                <p><strong>Status:</strong> {team.agent_response.completed ? 'Completed' : 'In Progress'}</p>
+              </Callout>
+            </div>
+          </Card>
+        )}
+
         {/* Results Section - Show first for better UX */}
         <EntitiesDisplay 
           entities={team.sachstand?.hasPart || []}

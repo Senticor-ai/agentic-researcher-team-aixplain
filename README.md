@@ -2,22 +2,24 @@
 
 An OSINT (Open Source Intelligence) Agent Team System designed for the Ministerium für Soziales, Gesundheit und Integration. The system enables policy makers to conduct automated web research on specific topics using aixplain team agents.
 
-## 🚀 Quick Commands
+## 🚀 Quick Start (From Anywhere)
 
-**Start Backend (Port 8000):**
+**Start Backend:**
 ```bash
-poetry run python -m api.main
+./start-backend.sh
 ```
 
-**Start Frontend (Port 5173):**
+**Start Frontend:**
 ```bash
-cd ui && npm run dev
+./start-frontend.sh
 ```
 
 **Access:**
 - UI: http://localhost:5173
-- API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+- API: http://localhost:8080
+- API Docs: http://localhost:8080/docs
+
+> **Note:** These scripts work from any directory - they automatically navigate to the correct location.
 
 ## Quick Start
 
@@ -30,9 +32,9 @@ cd ui && npm run dev
 
 ### Default Ports
 
-- **Backend API:** `http://localhost:8000`
+- **Backend API:** `http://localhost:8080`
 - **Frontend UI:** `http://localhost:5173`
-- **API Documentation:** `http://localhost:8000/docs`
+- **API Documentation:** `http://localhost:8080/docs`
 
 ### Initial Setup (First Time Only)
 
@@ -62,32 +64,41 @@ cd ..
 
 ### Starting the Services
 
-#### Start Backend API (Port 8000)
+#### Start Backend API (Port 8080)
 
+**Option 1: Using the start script (recommended)**
 ```bash
-# Option 1: Using Poetry (recommended)
+./start-backend.sh
+```
+
+**Option 2: Manual start**
+```bash
+# From project root
 poetry run python -m api.main
 
-# Option 2: Using Poetry shell
+# Or using Poetry shell
 poetry shell
 python -m api.main
 
-# Option 3: Using uvicorn directly
-poetry run uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+# Or using uvicorn directly
+poetry run uvicorn api.main:app --reload --host 0.0.0.0 --port 8080
 ```
 
 The API will be available at:
-- **API:** http://localhost:8000
-- **API Docs:** http://localhost:8000/docs
-- **Health Check:** http://localhost:8000/api/v1/health
+- **API:** http://localhost:8080
+- **API Docs:** http://localhost:8080/docs
+- **Health Check:** http://localhost:8080/api/v1/health
 
 #### Start Frontend UI (Port 5173)
 
+**Option 1: Using the start script (recommended)**
 ```bash
-# Navigate to UI directory
-cd ui
+./start-frontend.sh
+```
 
-# Start the development server
+**Option 2: Manual start**
+```bash
+cd ui
 npm run dev
 ```
 
@@ -99,13 +110,15 @@ If you already have services running on ports 8000 and 5173, you can either:
 
 **Option A: Stop existing services and restart**
 ```bash
-# Find and kill process on port 8000
-lsof -ti:8000 | xargs kill -9
+# Find and kill process on port 8080
+lsof -ti:8080 | xargs kill -9
 
 # Find and kill process on port 5173
 lsof -ti:5173 | xargs kill -9
 
-# Then start services as shown above
+# Then start services using the scripts
+./start-backend.sh
+./start-frontend.sh
 ```
 
 **Option B: Use different ports**
@@ -178,18 +191,18 @@ This will verify:
 
 ```bash
 # Health check
-curl http://localhost:8000/api/v1/health
+curl http://localhost:8080/api/v1/health
 
 # Create an agent team
-curl -X POST http://localhost:8000/api/v1/agent-teams \
+curl -X POST http://localhost:8080/api/v1/agent-teams \
   -H "Content-Type: application/json" \
   -d '{"topic": "Climate policy in Baden-Württemberg", "goals": "Research current initiatives"}'
 
 # List all teams
-curl http://localhost:8000/api/v1/agent-teams
+curl http://localhost:8080/api/v1/agent-teams
 
 # Get team details (replace {team_id} with actual ID)
-curl http://localhost:8000/api/v1/agent-teams/{team_id}
+curl http://localhost:8080/api/v1/agent-teams/{team_id}
 ```
 
 ### 3. Manual Frontend UI Testing

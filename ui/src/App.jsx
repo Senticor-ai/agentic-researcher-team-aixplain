@@ -12,7 +12,7 @@ function App() {
         <Navbar className="app-navbar">
           <Navbar.Group align={Alignment.LEFT}>
             <Navbar.Heading>
-              <strong>OSINT Agent Team Monitor</strong>
+              <strong>Senticor Agent Team Monitor</strong>
             </Navbar.Heading>
           </Navbar.Group>
         </Navbar>

@@ -119,10 +119,12 @@ async def run_team_task(team_id: str, topic: str, goals: list):
         store.add_log_entry(team_id, "Running team with research prompt")
         logger.info(f"Team {team_id}: Running team")
         
-        # Run team
+        # Run team in thread pool to avoid blocking the event loop
         # Mentalist will plan, Orchestrator will route to Search Agent,
         # Inspector will review, Response Generator will create final output
-        response = team.run(prompt)
+        import asyncio
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, team.run, prompt)
         
         # Try to extract request_id for polling intermediate status
         request_id = None
@@ -705,6 +707,62 @@ async def get_agent_configuration_endpoint():
     Returns the dynamically configured agents based on team_config.py
     """
     return get_agent_configuration()
+
+
+@app.get("/api/v1/debug/search-agent-instructions")
+async def get_search_agent_instructions_debug(topic: str = "Test Topic"):
+    """
+    Debug endpoint to see the exact instructions being sent to Search Agent
+    
+    Query Parameters:
+        - topic: Topic to use for generating instructions (default: "Test Topic")
+    
+    Returns:
+        Full instructions that would be sent to the Search Agent
+    """
+    from api.instructions.search_agent import get_search_agent_instructions
+    from api.search_strategy import enhance_instructions
+    
+    # Get base instructions
+    base_instructions = get_search_agent_instructions(topic)
+    
+    # Enhance with fallback strategies
+    enhanced_instructions = enhance_instructions(topic, base_instructions)
+    
+    return {
+        "topic": topic,
+        "instructions_length": len(enhanced_instructions),
+        "has_text_format": "PERSON: [Name]" in enhanced_instructions,
+        "has_json_format": '"type": "Person"' in enhanced_instructions,
+        "output_format_section": enhanced_instructions[enhanced_instructions.index("OUTPUT FORMAT"):enhanced_instructions.index("OUTPUT FORMAT")+500] if "OUTPUT FORMAT" in enhanced_instructions else "NOT FOUND",
+        "full_instructions": enhanced_instructions
+    }
+
+
+@app.get("/api/v1/debug/team-config")
+async def get_team_config_debug(topic: str = "Test Topic"):
+    """
+    Debug endpoint to see how a team would be configured
+    
+    Query Parameters:
+        - topic: Topic to use for team configuration (default: "Test Topic")
+    
+    Returns:
+        Team configuration details including agents and tools
+    """
+    from api.config import Config
+    
+    return {
+        "topic": topic,
+        "configured_tools": {
+            "tavily_search": Config.TOOL_IDS.get("tavily_search"),
+            "google_search": Config.TOOL_IDS.get("google_search"),
+            "wikipedia": Config.TOOL_IDS.get("wikipedia")
+        },
+        "default_model": Config.get_model_id(),
+        "model_options": Config.MODELS,
+        "note": "This shows what tools and models are configured. Use /debug/search-agent-instructions to see agent instructions."
+    }
 
 
 @app.get("/api/v1/agent-teams/{team_id}/mece-graph")

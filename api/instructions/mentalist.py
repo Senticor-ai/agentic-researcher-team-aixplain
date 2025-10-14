@@ -143,6 +143,119 @@ AVAILABLE AGENTS:
     
     instructions += """
 
+EXHAUSTIVE RESEARCH APPROACH:
+- You have a generous interaction limit (typically 50 steps)
+- Use ALL available steps for thorough research
+- Do NOT return early - continue until interaction limit is nearly exhausted
+- Use multiple search rounds with different strategies
+- Aim for comprehensive coverage, not quick completion
+
+MULTI-ROUND SEARCH STRATEGY:
+
+Round 1: Direct Search (Steps 1-15)
+- Search for the main topic directly
+- Extract initial entities (Person, Organization, Topic, Event, Policy)
+- Assess what entity types are found
+- Identify gaps in coverage
+
+Round 2: Alternative Terms and Underrepresented Types (Steps 16-30)
+- Use alternative search terms from the provided list
+- Search specifically for underrepresented entity types:
+  * If few Topics found, search for: themes, issues, policy areas
+  * If few Events found, search for: events, timeline, deadlines, announcements
+  * If few Policies found, search for: regulations, laws, guidelines, legislation
+  * If few Organizations found, search for: organizations, agencies, institutions
+  * If few People found, search for: officials, experts, stakeholders
+- Try different search approaches if initial searches yield limited results
+
+Round 3: Deep Dive into Specific Entities (Steps 31-45)
+- Search for specific entities found in Rounds 1 and 2
+- Search for related organizations and people
+- Search for authoritative sources:
+  * Government sources using site:.gov or site:.de filters
+  * Official documents from ministries and departments
+  * Academic sources and research studies
+- Follow up on interesting leads from earlier rounds
+
+Round 4: Wikipedia Discovery and Final Coverage (Steps 46-50)
+- Send all extracted entities to Wikipedia Agent for validation and discovery
+- Wikipedia Agent discovers related entities (especially Topics and Events)
+- Assess final coverage and identify any remaining gaps
+- Make final targeted searches if critical gaps remain
+
+FEEDBACK LOOPS - Assess After Each Round:
+After each search round, evaluate:
+1. Entity Count by Type:
+   - How many Person, Organization, Topic, Event, Policy entities extracted?
+   - Which entity types are underrepresented or missing?
+   - Are we finding diverse entity types or just one or two?
+
+2. Coverage Quality:
+   - Are we getting entities from diverse sources?
+   - Do entities have good descriptions and source citations?
+   - Are we finding authoritative sources (government, official sites)?
+
+3. Search Effectiveness:
+   - Are recent searches finding new entities or only duplicates?
+   - Have we exhausted the current search strategy?
+   - What search terms or strategies should we try next?
+
+4. Progress Assessment:
+   - Total entities extracted so far
+   - Entity type distribution across all five types
+   - Gaps identified in coverage
+   - Next strategy to pursue
+
+CONTINUE SEARCHING IF:
+- Total entities less than 10 (insufficient coverage)
+- Any entity type has 0 entities (missing diversity)
+- Topics less than 3 OR Events less than 2 (underrepresented types)
+- Still finding new entities in recent searches (not exhausted)
+- Interaction steps remaining greater than 5 (budget available)
+- Less than 3 search rounds completed (more strategies to try)
+
+ONLY STOP WHEN:
+- Interaction limit nearly exhausted (less than 5 steps remaining)
+- AND comprehensive coverage achieved (at least 10 entities, all major types represented)
+- AND recent searches yielding only duplicates (search space exhausted)
+- AND at least 3-4 search rounds completed with different strategies
+
+SEARCH TERM VARIATION PATTERNS:
+Use these patterns for thorough coverage (combine with your topic):
+
+For Topic Entities:
+- Direct topic name
+- Topic + "overview" or "themes"
+- Topic + "policy areas" or "issues"
+- Topic + "challenges"
+
+For Event Entities:
+- Topic + "events" or "timeline"
+- Topic + "announcements" or "deadlines"
+- Topic + "effective date" or "conference"
+- Topic + specific years like "2024" or "2025"
+
+For Policy Entities:
+- Topic + "regulations" or "laws"
+- Topic + "guidelines" or "legislation"
+- Topic + "policy" or "program"
+
+For People Entities:
+- Topic + "officials" or "minister"
+- Topic + "experts" or "stakeholders"
+- Topic + "director" or "leader"
+
+For Organization Entities:
+- Topic + "organizations" or "agencies"
+- Topic + "institutions" or "ministry"
+- Topic + "department" or "NGO"
+
+For Authoritative Sources:
+- Topic + "site:.gov" (US government)
+- Topic + "site:.de" (German sources)
+- Topic + "site:.eu" (EU sources)
+- Topic + "official" or "ministry"
+
 RESEARCH STRATEGY:
 1. Identify the topic language and domain (e.g., German government, social policy, technical)
 2. Assess topic complexity:
@@ -159,20 +272,45 @@ RESEARCH STRATEGY:
    - For German topics: Instruct to search German sources and .de domains
    - For government topics: Focus on official sources, ministries, agencies
    - For social topics: Include NGOs, welfare organizations, advocacy groups
-5. The Search Agent will extract Person entities (officials, experts, stakeholders, ministers)
-6. The Search Agent will extract Organization entities (agencies, NGOs, institutions, ministries)
-7. The Search Agent will provide REAL source URLs and excerpts for all entities"""
+5. The Search Agent will extract ALL entity types:
+   - Person entities (officials, experts, stakeholders, ministers)
+   - Organization entities (agencies, NGOs, institutions, ministries)
+   - Topic entities (themes, policy areas, subjects)
+   - Event entities (conferences, announcements, deadlines, effective dates)
+   - Policy entities (laws, regulations, guidelines, programs)
+6. The Search Agent will provide REAL source URLs and excerpts for all entities
+7. Use the multi-round search strategy to ensure comprehensive coverage
+8. Apply feedback loops after each round to assess coverage and adjust strategy"""
     
     if has_wikipedia_agent:
         instructions += """
-8. After entities are extracted, assign the Wikipedia Agent to enrich them
+9. After entities are extracted, assign the Wikipedia Agent to enrich them
    - Wikipedia Agent will search for Wikipedia articles matching the entities
    - It will retrieve Wikipedia URLs in multiple languages (de, en, fr)
    - It will extract Wikidata IDs for authoritative linking
-   - This enables deduplication and provides authoritative references"""
+   - This enables deduplication and provides authoritative references
+   - Wikipedia Agent can discover additional related entities (especially Topics and Events)"""
     
     instructions += """
-9. If initial search yields few results, try broader search terms or alternative phrasings
+
+PROGRESS TRACKING AND MONITORING:
+After each search round, log your progress assessment:
+- Round number (1, 2, 3, or 4)
+- Steps used so far and steps remaining
+- Entity counts by type: Person, Organization, Topic, Event, Policy
+- Coverage assessment: describe gaps and strengths
+- Next strategy: describe what you will search for next
+
+EARLY WARNING INDICATORS:
+Log warnings if you notice:
+- Steps used less than 30 and considering completion (you may be returning too early)
+- Total entities less than 5 (insufficient coverage)
+- Any entity type completely missing (lack of diversity)
+- No new entities found in last 2 rounds (search may be exhausted, try different terms)
+- Less than 3 search rounds completed (more strategies should be tried)
+
+Remember: Use your full interaction budget to provide comprehensive results.
+Quality research takes time and multiple search strategies.
 
 LANGUAGE HANDLING:
 - For German topics (e.g., "Jugendarmut Baden-Württemberg"), instruct Search Agent to:

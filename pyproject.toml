@@ -24,4 +24,11 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "regression: marks tests as regression tests to prevent feature degradation",
 ]
+# Only collect test_*.py files (excludes manual_*.py, demo_*.py, debug_*.py, verify_*.py)
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+testpaths = ["tests"]
+norecursedirs = [".git", ".tox", "dist", "build", "*.egg"]

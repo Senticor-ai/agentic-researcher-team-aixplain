@@ -1132,3 +1132,56 @@
     align-items: flex-start;
   }
 }
+
+/* Error Details Section */
+.error-details-section {
+  background-color: #fff5f5 !important;
+  border-left: 4px solid #db3737 !important;
+  margin-bottom: 1.5rem;
+}
+
+.error-output,
+.agent-input {
+  background-color: #f5f8fa;
+  border: 1px solid #d8e1e8;
+  border-radius: 4px;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #182026;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.error-output {
+  background-color: #fff5f5;
+  border-color: #f5b5b5;
+  color: #a82a2a;
+}
+
+.error-details-section h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #182026;
+}
+
+.error-details-section .bp5-callout {
+  margin-bottom: 0;
+}
+
+.error-details-section .bp5-callout p {
+  margin: 0.5rem 0;
+}
+
+.error-details-section .bp5-callout p:first-child {
+  margin-top: 0;
+}
+
+.error-details-section .bp5-callout p:last-child {
+  margin-bottom: 0;
+}

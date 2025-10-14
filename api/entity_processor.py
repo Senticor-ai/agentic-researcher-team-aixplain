@@ -269,6 +269,17 @@ class EntityProcessor:
                                     return entities_with_wiki
                             except (ValueError, SyntaxError) as e:
                                 logger.info(f"Could not parse Search Agent output: {e}")
+                            
+                            # Try text format parser (new format)
+                            logger.info("Attempting to parse Search Agent output as text format")
+                            parsed = EntityProcessor.parse_text_format(search_output)
+                            if parsed and parsed.get("entities"):
+                                logger.info(f"Parsed Search Agent output as text format: {len(parsed['entities'])} entities")
+                                # Merge Wikipedia data
+                                entities_with_wiki = EntityProcessor.merge_wikipedia_data(
+                                    parsed, wikipedia_data
+                                )
+                                return entities_with_wiki
             
             # Fallback to original logic
             # The agent should return structured entities in its output
@@ -352,6 +363,13 @@ class EntityProcessor:
                     except (ValueError, SyntaxError) as e:
                         logger.info(f"Python literal eval failed: {e}")
                 
+                # Strategy 5: Parse structured text format (new format)
+                if entities_data is None:
+                    logger.info("Attempting to parse structured text format")
+                    entities_data = EntityProcessor.parse_text_format(output_text)
+                    if entities_data and entities_data.get("entities"):
+                        logger.info(f"Successfully parsed text format: {len(entities_data['entities'])} entities")
+                
                 # If all strategies failed
                 if entities_data is None:
                     logger.warning("All parsing strategies failed")
@@ -395,6 +413,355 @@ class EntityProcessor:
             import traceback
             logger.error(traceback.format_exc())
             return {"entities": []}
+    
+    @staticmethod
+    def _extract_field(section: str, field_name: str) -> Optional[str]:
+        """
+        Extract a field value from a text section
+        
+        Args:
+            section: Text section containing entity data
+            field_name: Name of the field to extract
+            
+        Returns:
+            Field value or None if not found
+        """
+        import re
+        # Match field name followed by colon and value until next field or end
+        pattern = rf'{field_name}:\s*(.+?)(?=\n[A-Z][a-z]+:|\nSources:|\n(?:PERSON|ORGANIZATION|TOPIC|EVENT|POLICY):|$)'
+        match = re.search(pattern, section, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return None
+    
+    @staticmethod
+    def _extract_sources(section: str) -> List[Dict[str, str]]:
+        """
+        Extract sources from a text section
+        
+        Args:
+            section: Text section containing entity data
+            
+        Returns:
+            List of source dictionaries with url and excerpt
+        """
+        import re
+        sources = []
+        sources_section = re.search(
+            r'Sources:\s*(.+?)(?=\n(?:PERSON|ORGANIZATION|TOPIC|EVENT|POLICY):|$)', 
+            section, 
+            re.DOTALL
+        )
+        if sources_section:
+            sources_text = sources_section.group(1)
+            # Parse each source line: - [URL]: "[Excerpt]"
+            source_lines = re.findall(r'-\s*(.+?):\s*"(.+?)"', sources_text, re.DOTALL)
+            for url, excerpt in source_lines:
+                sources.append({
+                    "url": url.strip(),
+                    "excerpt": excerpt.strip()
+                })
+        return sources
+    
+    @staticmethod
+    def parse_topic_entity(section: str) -> Optional[Dict[str, Any]]:
+        """
+        Parse TOPIC entity from text section
+        
+        Expected format:
+        TOPIC: [Name]
+        Description: [Description]
+        Sources:
+        - [URL]: "[Excerpt]"
+        
+        Args:
+            section: Text section containing TOPIC entity
+            
+        Returns:
+            Entity dictionary or None if parsing fails
+        """
+        import re
+        
+        # Extract name from TOPIC: line (handle markdown bold markers **)
+        name_match = re.match(r'\*{0,2}TOPIC:\s*(.+?)(\*{0,2})?$', section, re.MULTILINE)
+        if not name_match:
+            return None
+        
+        name = name_match.group(1).strip().strip('*')
+        
+        # Extract fields
+        description = EntityProcessor._extract_field(section, 'Description')
+        sources = EntityProcessor._extract_sources(section)
+        
+        entity = {
+            "type": "Topic",
+            "name": name,
+            "description": description or "",
+            "sources": sources
+        }
+        
+        return entity
+    
+    @staticmethod
+    def parse_event_entity(section: str) -> Optional[Dict[str, Any]]:
+        """
+        Parse EVENT entity from text section
+        
+        Expected format:
+        EVENT: [Name]
+        Date: [ISO 8601 date or date range]
+        Location: [Location]
+        Description: [Description]
+        Sources:
+        - [URL]: "[Excerpt]"
+        
+        Args:
+            section: Text section containing EVENT entity
+            
+        Returns:
+            Entity dictionary or None if parsing fails
+        """
+        import re
+        
+        # Extract name from EVENT: line (handle markdown bold markers **)
+        name_match = re.match(r'\*{0,2}EVENT:\s*(.+?)(\*{0,2})?$', section, re.MULTILINE)
+        if not name_match:
+            return None
+        
+        name = name_match.group(1).strip().strip('*')
+        
+        # Extract fields
+        description = EntityProcessor._extract_field(section, 'Description')
+        date = EntityProcessor._extract_field(section, 'Date')
+        location = EntityProcessor._extract_field(section, 'Location')
+        organizer = EntityProcessor._extract_field(section, 'Organizer')
+        sources = EntityProcessor._extract_sources(section)
+        
+        entity = {
+            "type": "Event",
+            "name": name,
+            "description": description or "",
+            "sources": sources
+        }
+        
+        # Add optional temporal and location fields
+        if date:
+            # Check if it's a date range (contains " to " or " - ")
+            if " to " in date or " - " in date:
+                # Split into start and end dates
+                parts = re.split(r'\s+(?:to|-)\s+', date)
+                if len(parts) == 2:
+                    entity["startDate"] = parts[0].strip()
+                    entity["endDate"] = parts[1].strip()
+                else:
+                    entity["startDate"] = date
+            else:
+                entity["startDate"] = date
+        
+        if location:
+            entity["location"] = location
+        
+        if organizer:
+            entity["organizer"] = organizer
+        
+        return entity
+    
+    @staticmethod
+    def parse_policy_entity(section: str) -> Optional[Dict[str, Any]]:
+        """
+        Parse POLICY entity from text section
+        
+        Expected format:
+        POLICY: [Name]
+        Identifier: [Official ID]
+        Effective Date: [ISO 8601 date]
+        Jurisdiction: [Jurisdiction]
+        Description: [Description]
+        Sources:
+        - [URL]: "[Excerpt]"
+        
+        Args:
+            section: Text section containing POLICY entity
+            
+        Returns:
+            Entity dictionary or None if parsing fails
+        """
+        import re
+        
+        # Extract name from POLICY: line (handle markdown bold markers **)
+        name_match = re.match(r'\*{0,2}POLICY:\s*(.+?)(\*{0,2})?$', section, re.MULTILINE)
+        if not name_match:
+            return None
+        
+        name = name_match.group(1).strip().strip('*')
+        
+        # Extract fields
+        description = EntityProcessor._extract_field(section, 'Description')
+        identifier = EntityProcessor._extract_field(section, 'Identifier')
+        effective_date = EntityProcessor._extract_field(section, 'Effective Date')
+        jurisdiction = EntityProcessor._extract_field(section, 'Jurisdiction')
+        enactment_date = EntityProcessor._extract_field(section, 'Enactment Date')
+        expiration_date = EntityProcessor._extract_field(section, 'Expiration Date')
+        sources = EntityProcessor._extract_sources(section)
+        
+        entity = {
+            "type": "Policy",
+            "name": name,
+            "description": description or "",
+            "sources": sources
+        }
+        
+        # Add optional fields
+        if identifier:
+            entity["legislationIdentifier"] = identifier
+        
+        if effective_date:
+            entity["legislationDate"] = effective_date
+        
+        if enactment_date:
+            entity["dateCreated"] = enactment_date
+        
+        if expiration_date:
+            entity["expirationDate"] = expiration_date
+        
+        if jurisdiction:
+            entity["legislationJurisdiction"] = jurisdiction
+        
+        return entity
+    
+    @staticmethod
+    def parse_text_format(text: str) -> Dict[str, Any]:
+        """
+        Parse structured text format from Search Agent
+        
+        Expected format:
+        PERSON: [Name]
+        Job Title: [Title]
+        Description: [Description]
+        Sources:
+        - [URL]: "[Excerpt]"
+        
+        ORGANIZATION: [Name]
+        Website: [URL]
+        Description: [Description]
+        Sources:
+        - [URL]: "[Excerpt]"
+        
+        TOPIC: [Name]
+        Description: [Description]
+        Sources:
+        - [URL]: "[Excerpt]"
+        
+        EVENT: [Name]
+        Date: [ISO 8601 date]
+        Location: [Location]
+        Description: [Description]
+        Sources:
+        - [URL]: "[Excerpt]"
+        
+        POLICY: [Name]
+        Identifier: [Official ID]
+        Effective Date: [ISO 8601 date]
+        Jurisdiction: [Jurisdiction]
+        Description: [Description]
+        Sources:
+        - [URL]: "[Excerpt]"
+        
+        Args:
+            text: Text output from Search Agent
+            
+        Returns:
+            Dictionary with entities array
+        """
+        import re
+        
+        entities = []
+        entity_type_stats = {
+            "Person": 0,
+            "Organization": 0,
+            "Topic": 0,
+            "Event": 0,
+            "Policy": 0
+        }
+        
+        # Split by entity type markers (with optional markdown **)
+        sections = re.split(r'\n(?=\*{0,2}(?:PERSON|ORGANIZATION|TOPIC|EVENT|POLICY):)', text)
+        
+        for section in sections:
+            section = section.strip()
+            if not section:
+                continue
+            
+            entity = None
+            
+            # Route to appropriate parser based on entity type
+            if section.startswith('TOPIC:') or section.startswith('**TOPIC:'):
+                entity = EntityProcessor.parse_topic_entity(section)
+                if entity:
+                    entity_type_stats["Topic"] += 1
+            elif section.startswith('EVENT:') or section.startswith('**EVENT:'):
+                entity = EntityProcessor.parse_event_entity(section)
+                if entity:
+                    entity_type_stats["Event"] += 1
+            elif section.startswith('POLICY:') or section.startswith('**POLICY:'):
+                entity = EntityProcessor.parse_policy_entity(section)
+                if entity:
+                    entity_type_stats["Policy"] += 1
+            elif section.startswith('PERSON:') or section.startswith('**PERSON:'):
+                # Parse Person entity (existing logic)
+                name_match = re.match(r'\*{0,2}PERSON:\s*(.+?)(\*{0,2})?$', section, re.MULTILINE)
+                if name_match:
+                    name = name_match.group(1).strip().strip('*')
+                    
+                    # Extract fields
+                    job_title = EntityProcessor._extract_field(section, 'Job Title')
+                    description = EntityProcessor._extract_field(section, 'Description')
+                    sources = EntityProcessor._extract_sources(section)
+                    
+                    entity = {
+                        "type": "Person",
+                        "name": name,
+                        "description": description or "",
+                        "sources": sources
+                    }
+                    
+                    if job_title:
+                        entity["jobTitle"] = job_title
+                    
+                    entity_type_stats["Person"] += 1
+            elif section.startswith('ORGANIZATION:') or section.startswith('**ORGANIZATION:'):
+                # Parse Organization entity (existing logic)
+                name_match = re.match(r'\*{0,2}ORGANIZATION:\s*(.+?)(\*{0,2})?$', section, re.MULTILINE)
+                if name_match:
+                    name = name_match.group(1).strip().strip('*')
+                    
+                    # Extract fields
+                    website = EntityProcessor._extract_field(section, 'Website')
+                    description = EntityProcessor._extract_field(section, 'Description')
+                    sources = EntityProcessor._extract_sources(section)
+                    
+                    entity = {
+                        "type": "Organization",
+                        "name": name,
+                        "description": description or "",
+                        "sources": sources
+                    }
+                    
+                    if website:
+                        entity["url"] = website
+                    
+                    entity_type_stats["Organization"] += 1
+            
+            if entity:
+                entities.append(entity)
+        
+        # Log statistics about entity types parsed
+        total_entities = len(entities)
+        logger.info(f"Parsed {total_entities} entities from text format")
+        if total_entities > 0:
+            logger.info(f"Entity type breakdown: {entity_type_stats}")
+        
+        return {"entities": entities}
     
     @staticmethod
     def deduplicate_entities(entities: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:

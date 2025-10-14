@@ -85,6 +85,53 @@ class OrganizationEntity(BaseModel):
     wikipedia_links: Optional[List[dict]] = Field(None, description="Wikipedia links in multiple languages")
 
 
+class TopicEntity(BaseModel):
+    """Schema.org Topic/Thing entity"""
+    type: Literal["Topic"] = Field(default="Topic", description="Schema.org type")
+    name: str = Field(..., description="Topic name")
+    description: Optional[str] = Field(None, description="Topic description")
+    about: Optional[str] = Field(None, description="What this topic is about")
+    sources: List[EntitySource] = Field(default_factory=list, description="Source URLs")
+    sameAs: Optional[List[str]] = Field(None, description="Wikipedia and Wikidata URLs")
+    wikidata_id: Optional[str] = Field(None, description="Wikidata identifier")
+    wikipedia_links: Optional[List[dict]] = Field(None, description="Wikipedia links in multiple languages")
+    quality_score: Optional[float] = Field(None, description="Quality score (0.0 to 1.0)")
+
+
+class EventEntity(BaseModel):
+    """Schema.org Event entity"""
+    type: Literal["Event"] = Field(default="Event", description="Schema.org type")
+    name: str = Field(..., description="Event name")
+    description: Optional[str] = Field(None, description="Event description")
+    startDate: Optional[str] = Field(None, description="Event start date (ISO 8601)")
+    endDate: Optional[str] = Field(None, description="Event end date (ISO 8601)")
+    location: Optional[str] = Field(None, description="Event location")
+    organizer: Optional[str] = Field(None, description="Event organizer")
+    sources: List[EntitySource] = Field(default_factory=list, description="Source URLs")
+    sameAs: Optional[List[str]] = Field(None, description="Wikipedia and Wikidata URLs")
+    wikidata_id: Optional[str] = Field(None, description="Wikidata identifier")
+    wikipedia_links: Optional[List[dict]] = Field(None, description="Wikipedia links in multiple languages")
+    quality_score: Optional[float] = Field(None, description="Quality score (0.0 to 1.0)")
+
+
+class PolicyEntity(BaseModel):
+    """Schema.org Legislation/Policy entity"""
+    type: Literal["Policy"] = Field(default="Policy", description="Schema.org type")
+    name: str = Field(..., description="Policy/legislation name")
+    description: Optional[str] = Field(None, description="Policy description")
+    legislationIdentifier: Optional[str] = Field(None, description="Official identifier")
+    dateCreated: Optional[str] = Field(None, description="Enactment date (ISO 8601)")
+    dateModified: Optional[str] = Field(None, description="Last modified date (ISO 8601)")
+    legislationDate: Optional[str] = Field(None, description="Effective date (ISO 8601)")
+    expirationDate: Optional[str] = Field(None, description="Expiration date (ISO 8601)")
+    legislationJurisdiction: Optional[str] = Field(None, description="Jurisdiction")
+    sources: List[EntitySource] = Field(default_factory=list, description="Source URLs")
+    sameAs: Optional[List[str]] = Field(None, description="Wikipedia and Wikidata URLs")
+    wikidata_id: Optional[str] = Field(None, description="Wikidata identifier")
+    wikipedia_links: Optional[List[dict]] = Field(None, description="Wikipedia links in multiple languages")
+    quality_score: Optional[float] = Field(None, description="Quality score (0.0 to 1.0)")
+
+
 class JSONLDSachstand(BaseModel):
     """JSON-LD Sachstand output structure"""
     model_config = {"populate_by_name": True}

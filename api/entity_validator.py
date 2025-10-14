@@ -48,6 +48,34 @@ class EntityValidator:
     MIN_QUALITY_SCORE = 0.3  # entities below this are filtered out
     
     @staticmethod
+    def _is_valid_date_format(date_str: str) -> bool:
+        """
+        Check if date string is in valid ISO 8601 format
+        
+        Args:
+            date_str: Date string to validate
+            
+        Returns:
+            True if date is in valid ISO 8601 format, False otherwise
+        """
+        if not date_str or not isinstance(date_str, str):
+            return False
+        
+        # ISO 8601 patterns: YYYY-MM-DD, YYYY-MM-DDTHH:MM:SS, YYYY-MM-DDTHH:MM:SSZ, etc.
+        iso_patterns = [
+            r'^\d{4}-\d{2}-\d{2}$',  # YYYY-MM-DD
+            r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$',  # YYYY-MM-DDTHH:MM:SS
+            r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$',  # YYYY-MM-DDTHH:MM:SSZ
+            r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$',  # With timezone
+        ]
+        
+        for pattern in iso_patterns:
+            if re.match(pattern, date_str):
+                return True
+        
+        return False
+    
+    @staticmethod
     def is_valid_url(url: str) -> bool:
         """
         Check if URL is valid and not a placeholder
@@ -119,6 +147,8 @@ class EntityValidator:
         - Has valid sources: 0.2
         - Has authoritative sources: 0.2
         - Has job title (Person) or URL (Organization): 0.1
+        - Has temporal info (Event/Policy): 0.1
+        - Has location (Event) or identifier (Policy): 0.05
         - Has Wikipedia link: 0.1
         
         Args:
@@ -162,6 +192,24 @@ class EntityValidator:
         elif entity_type == "Organization":
             if entity.get("url") and EntityValidator.is_valid_url(entity.get("url")):
                 score += 0.1
+        elif entity_type == "Topic":
+            # Topics get bonus for having 'about' field
+            if entity.get("about"):
+                score += 0.1
+        elif entity_type == "Event":
+            # Events get bonus for temporal information
+            if entity.get("startDate"):
+                score += 0.1
+            # Additional bonus for location
+            if entity.get("location"):
+                score += 0.05
+        elif entity_type == "Policy":
+            # Policies get bonus for temporal information
+            if entity.get("legislationDate") or entity.get("dateCreated"):
+                score += 0.1
+            # Additional bonus for identifier
+            if entity.get("legislationIdentifier"):
+                score += 0.05
         
         # Check Wikipedia enrichment
         if entity.get("sameAs") or entity.get("wikidata_id"):
@@ -190,7 +238,7 @@ class EntityValidator:
         
         if not entity.get("type"):
             issues.append("Missing required field: type")
-        elif entity.get("type") not in ["Person", "Organization"]:
+        elif entity.get("type") not in ["Person", "Organization", "Topic", "Event", "Policy"]:
             issues.append(f"Invalid entity type: {entity.get('type')}")
         
         # Check description
@@ -228,6 +276,38 @@ class EntityValidator:
             url = entity.get("url")
             if url and not EntityValidator.is_valid_url(url):
                 issues.append(f"Organization URL is invalid: {url}")
+        
+        # Check Event-specific fields
+        if entity.get("type") == "Event":
+            if not entity.get("startDate"):
+                issues.append("Event entity missing startDate (recommended)")
+            else:
+                # Validate temporal field format if present
+                start_date = entity.get("startDate")
+                if not EntityValidator._is_valid_date_format(start_date):
+                    issues.append(f"Event startDate has invalid format: {start_date} (expected ISO 8601)")
+            
+            # Validate endDate if present
+            if entity.get("endDate"):
+                end_date = entity.get("endDate")
+                if not EntityValidator._is_valid_date_format(end_date):
+                    issues.append(f"Event endDate has invalid format: {end_date} (expected ISO 8601)")
+        
+        # Check Policy-specific fields
+        if entity.get("type") == "Policy":
+            # Policies should have at least one of: identifier or date
+            has_identifier = bool(entity.get("legislationIdentifier"))
+            has_date = bool(entity.get("legislationDate") or entity.get("dateCreated"))
+            
+            if not has_identifier and not has_date:
+                issues.append("Policy entity missing both legislationIdentifier and dates (at least one recommended)")
+            
+            # Validate temporal fields if present
+            for date_field in ["legislationDate", "dateCreated", "dateModified", "expirationDate"]:
+                if entity.get(date_field):
+                    date_value = entity.get(date_field)
+                    if not EntityValidator._is_valid_date_format(date_value):
+                        issues.append(f"Policy {date_field} has invalid format: {date_value} (expected ISO 8601)")
         
         # Calculate quality score
         quality_score = EntityValidator.calculate_quality_score(entity)
