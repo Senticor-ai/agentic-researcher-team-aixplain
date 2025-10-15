@@ -66,15 +66,43 @@ YOUR RESPONSIBILITIES:
 6. Track MECE coverage status and update as research progresses
 7. Ensure thorough entity extraction (Person and Organization entities)
 
+⚠️ CRITICAL: TASK ASSIGNMENT RULES ⚠️
+
+NEVER ASSIGN TASKS TO YOURSELF (Mentalist):
+- MECE decomposition is YOUR INTERNAL PLANNING ACTIVITY
+- Do NOT create tasks like "Create MECE decomposition" assigned to "Mentalist"
+- MECE planning happens in your mind, not as a delegated task
+- Store MECE structure in your planning notes, not as a task
+
+ALWAYS ASSIGN SEARCH TASKS TO "Search Agent":
+- ALL research and search tasks must be assigned to "Search Agent"
+- Even if you're doing MECE decomposition, the SEARCH tasks go to Search Agent
+- The Search Agent executes searches, you do the planning
+
+CORRECT TASK FORMAT:
+{{
+  "name": "Task 1",
+  "step_id": "1",
+  "description": "Search for key stakeholders in Baden-Württemberg integration policy using Tavily Search",
+  "agent": "Search Agent"  // ✅ CORRECT
+}}
+
+INCORRECT TASK FORMAT (DO NOT DO THIS):
+{{
+  "name": "Task 1", 
+  "description": "Create MECE decomposition for the topic",
+  "agent": "Mentalist"  // ❌ WRONG - Never assign to yourself!
+}}
+
 MECE DECOMPOSITION STRATEGY:
 When the topic is complex (broad scope, multiple dimensions, or requires comprehensive coverage):
 
-1. ANALYZE TOPIC COMPLEXITY:
+1. ANALYZE TOPIC COMPLEXITY (INTERNAL - NOT A TASK):
    - Simple topics: Single entity or narrow focus (e.g., "Dr. Manfred Lucha")
    - Medium topics: Specific domain with clear boundaries (e.g., "Youth protection Baden-Württemberg 2025")
    - Complex topics: Broad policy areas, multiple stakeholders, or requiring systematic coverage (e.g., "Integration policies Baden-Württemberg")
 
-2. CREATE MECE DIMENSIONS (for complex topics):
+2. CREATE MECE DIMENSIONS INTERNALLY (NOT A TASK):
    - People: Key stakeholders, decision-makers, officials, experts, affected populations
    - Subjects: Policy areas, programs, services, legislation, initiatives
    - Time: Historical timeline, current state, recent developments, future plans
@@ -115,13 +143,34 @@ When the topic is complex (broad scope, multiple dimensions, or requires compreh
      ]
    }}
 
-3. DEPTH-FIRST EXPLORATION:
+3. DEPTH-FIRST EXPLORATION (ASSIGN SEARCH TASKS TO SEARCH AGENT):
    - Select highest priority uncovered node
-   - Assign Search Agent to research that node completely
+   - Create a SEARCH task for that node
+   - Assign the task to "Search Agent" (NOT to "Mentalist")
    - Mark node as "in_progress" when starting
    - Mark node as "complete" when sufficient entities extracted
    - Move to next priority node
    - Store MECE graph structure in your planning notes
+
+   EXAMPLE WORKFLOW FOR COMPLEX TOPIC:
+   
+   Topic: "Einbürgerungstests in Baden-Württemberg"
+   
+   Step 1 (INTERNAL): Analyze complexity → Complex topic, needs MECE
+   Step 2 (INTERNAL): Create MECE structure with dimensions: people, subjects, time, geography
+   Step 3 (TASK): Assign "Search for key officials and ministers responsible for citizenship tests in Baden-Württemberg" to "Search Agent"
+   Step 4 (WAIT): Wait for Search Agent results
+   Step 5 (INTERNAL): Mark "people" node as complete
+   Step 6 (TASK): Assign "Search for citizenship test programs and requirements in Baden-Württemberg" to "Search Agent"
+   Step 7 (WAIT): Wait for Search Agent results
+   Step 8 (INTERNAL): Mark "subjects" node as complete
+   ... continue until all nodes covered
+   
+   ❌ WRONG WORKFLOW:
+   Step 1 (TASK): Assign "Create MECE decomposition" to "Mentalist" ← NEVER DO THIS
+   Step 2 (TASK): Assign "Search for..." to "Search Agent"
+   
+   The MECE decomposition is YOUR internal planning, not a task to delegate!
 
 4. TRACK COVERAGE:
    - Maintain MECE graph showing which nodes are researched
@@ -135,7 +184,24 @@ When the topic is complex (broad scope, multiple dimensions, or requires compreh
    - Return partial results with clear indication of remaining MECE nodes
 
 AVAILABLE AGENTS:
-- Search Agent: Has Tavily Search tool. Specializes in finding information and extracting Person/Organization entities with source citations. Supports both English and German language searches."""
+- Search Agent: Has Tavily Search AND Google Search tools. Specializes in finding information and extracting Person/Organization entities with source citations. Supports both English and German language searches.
+  
+  TOOL SELECTION GUIDANCE:
+  - For German government topics: Prefer Google Search (more reliable for .de domains)
+  - For international topics: Prefer Tavily Search (AI-optimized)
+  - If one tool fails/times out: Automatically falls back to the other
+  
+  IMPORTANT: Search Agent only searches and extracts entities. It does NOT compile reports or create summaries. 
+  That is the Response Generator's responsibility.
+  
+  When assigning tasks to Search Agent:
+  ✓ "Search for ministers in Baden-Württemberg government using Google Search"
+  ✓ "Find organizations involved in integration policies"
+  ✓ "Extract entities from search results about [topic]"
+  ✓ "Use Google Search for German government sources"
+  ✗ "Compile a comprehensive report" (not Search Agent's job)
+  ✗ "Create a summary of findings" (not Search Agent's job)
+  ✗ "Format the final output" (not Search Agent's job)"""
     
     if has_wikipedia_agent:
         instructions += """
@@ -284,12 +350,22 @@ RESEARCH STRATEGY:
     
     if has_wikipedia_agent:
         instructions += """
-9. After entities are extracted, assign the Wikipedia Agent to enrich them
-   - Wikipedia Agent will search for Wikipedia articles matching the entities
+9. After entities are extracted, assign the Wikipedia Agent to enrich them ONE AT A TIME
+   - IMPORTANT: Call Wikipedia Agent separately for EACH entity (prevents timeouts)
+   - For each Person entity: "Enrich [Person Name] with Wikipedia links"
+   - For each Organization entity: "Enrich [Organization Name] with Wikipedia links"
+   - For each Topic/Event/Policy: "Enrich [Entity Name] with Wikipedia links"
+   - Wikipedia Agent will search for Wikipedia articles matching the entity
    - It will retrieve Wikipedia URLs in multiple languages (de, en, fr)
    - It will extract Wikidata IDs for authoritative linking
    - This enables deduplication and provides authoritative references
-   - Wikipedia Agent can discover additional related entities (especially Topics and Events)"""
+   
+   Example workflow:
+   - Search Agent extracts: Dr. Manfred Lucha, BAMF, Einbürgerungstest
+   - Call Wikipedia Agent for "Dr. Manfred Lucha" → Get Wikipedia links
+   - Call Wikipedia Agent for "BAMF" → Get Wikipedia links
+   - Call Wikipedia Agent for "Einbürgerungstest" → Get Wikipedia links
+   - Aggregate all enrichment data"""
     
     instructions += """
 

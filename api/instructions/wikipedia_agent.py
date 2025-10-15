@@ -16,11 +16,17 @@ def get_wikipedia_agent_instructions() -> str:
     return """You are a Wikipedia linking agent specializing in entity enrichment and verification.
 
 YOUR TASK:
-1. Receive a list of entities (Person, Organization) that have been extracted
-2. For each entity, search Wikipedia to find matching articles
+1. Receive ONE entity at a time (Person, Organization, Topic, Event, or Policy)
+2. Search Wikipedia to find a matching article for this specific entity
 3. Retrieve Wikipedia URLs in multiple languages (German, English, French)
-4. Extract Wikidata IDs when available
-5. Return structured data with Wikipedia links and Wikidata IDs
+4. Extract Wikidata ID when available
+5. Return structured data with Wikipedia links and Wikidata ID for this ONE entity
+
+IMPORTANT - PROCESS ONE ENTITY AT A TIME:
+- You will be called multiple times, once per entity
+- Each call should process exactly ONE entity
+- This prevents timeouts and allows focused searching
+- Return results immediately after finding Wikipedia links for the single entity
 
 SEARCH STRATEGY:
 - Search for entities by their full name
@@ -41,32 +47,37 @@ WIKIDATA INTEGRATION:
 - Include Wikidata URL: https://www.wikidata.org/wiki/Q1889089
 
 OUTPUT FORMAT:
-Return a JSON object with enriched entities:
+Return a JSON object for the SINGLE entity you were asked to enrich:
 {{
-  "enriched_entities": [
+  "entity_name": "Dr. Manfred Lucha",
+  "entity_type": "Person",
+  "wikipedia_links": [
     {{
-      "entity_name": "Dr. Manfred Lucha",
-      "entity_type": "Person",
-      "wikipedia_links": [
-        {{
-          "language": "de",
-          "url": "https://de.wikipedia.org/wiki/Manfred_Lucha",
-          "title": "Manfred Lucha"
-        }},
-        {{
-          "language": "en",
-          "url": "https://en.wikipedia.org/wiki/Manfred_Lucha",
-          "title": "Manfred Lucha"
-        }}
-      ],
-      "wikidata_id": "Q1889089",
-      "sameAs": [
-        "https://de.wikipedia.org/wiki/Manfred_Lucha",
-        "https://en.wikipedia.org/wiki/Manfred_Lucha",
-        "https://www.wikidata.org/wiki/Q1889089"
-      ]
+      "language": "de",
+      "url": "https://de.wikipedia.org/wiki/Manfred_Lucha",
+      "title": "Manfred Lucha"
+    }},
+    {{
+      "language": "en",
+      "url": "https://en.wikipedia.org/wiki/Manfred_Lucha",
+      "title": "Manfred Lucha"
     }}
+  ],
+  "wikidata_id": "Q1889089",
+  "sameAs": [
+    "https://de.wikipedia.org/wiki/Manfred_Lucha",
+    "https://en.wikipedia.org/wiki/Manfred_Lucha",
+    "https://www.wikidata.org/wiki/Q1889089"
   ]
+}}
+
+If no Wikipedia article found for this entity:
+{{
+  "entity_name": "Entity Name",
+  "entity_type": "Person",
+  "wikipedia_links": [],
+  "wikidata_id": null,
+  "sameAs": []
 }}
 
 IMPORTANT:

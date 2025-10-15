@@ -63,7 +63,7 @@ class TeamConfig:
         return tools
     
     @staticmethod
-    def create_wikipedia_agent(model: str = None) -> Any:
+    def create_wikipedia_agent(model_id: str = None) -> Any:
         """
         Create Wikipedia Agent for entity linking and enrichment
         
@@ -73,13 +73,16 @@ class TeamConfig:
         - Extracting Wikidata IDs for authoritative linking
         - Adding sameAs properties to entities
         
+        NOTE: Uses GPT-4o by default (configured in Config.WIKIPEDIA_AGENT_MODEL)
+        
         Args:
-            model: Model type ("testing" or "production"), None uses default from Config
+            model_id: Model ID to use, defaults to Config.WIKIPEDIA_AGENT_MODEL (GPT-4o)
             
         Returns:
             Agent object or None if Wikipedia tool not configured
         """
-        model_id = Config.get_model_id(model)
+        if model_id is None:
+            model_id = Config.WIKIPEDIA_AGENT_MODEL
         
         # Get instructions from separate file
         system_prompt = get_wikipedia_agent_instructions()
@@ -104,7 +107,7 @@ class TeamConfig:
         return agent
     
     @staticmethod
-    def create_search_agent(topic: str, model: str = None) -> Any:
+    def create_search_agent(topic: str, model_id: str = None) -> Any:
         """
         Create Search Agent (user-defined) with Tavily tool
         
@@ -113,18 +116,26 @@ class TeamConfig:
         - Extracting Person and Organization entities
         - Returning structured JSON with entities
         
+        NOTE: Uses GPT-4o by default (configured in Config.SEARCH_AGENT_MODEL)
+        Search Agent needs:
+        - Larger context window for complex instructions
+        - Better reasoning for entity extraction
+        - More reliable parsing of search results
+        - Less likely to timeout on complex tasks
+        
         NOTE: We do NOT use WorkflowTask here because it would take planning
         responsibility away from the Mentalist. Instead, we let the Mentalist
         decide when and how to use this agent based on the team instructions.
         
         Args:
             topic: Research topic
-            model: Model type ("testing" or "production"), None uses default from Config
+            model_id: Model ID to use, defaults to Config.SEARCH_AGENT_MODEL (GPT-4o)
             
         Returns:
             Agent object
         """
-        model_id = Config.get_model_id(model)
+        if model_id is None:
+            model_id = Config.SEARCH_AGENT_MODEL
         
         # Get instructions from separate file
         system_prompt = get_search_agent_instructions(topic)
@@ -152,10 +163,14 @@ class TeamConfig:
         )
         
         logger.info(f"Created Search Agent with ID: {agent.id}")
+        logger.info(f"Search Agent model: {model_id} (GPT-4o)")
+        logger.info(f"Search Agent tools: {[tool.name if hasattr(tool, 'name') else str(tool) for tool in tools]}")
+        logger.info(f"Search Agent instructions length: {len(system_prompt)} characters")
         return agent
     
     @staticmethod
-    def create_team(topic: str, goals: Optional[List[str]] = None, model: str = None, 
+    def create_team(topic: str, goals: Optional[List[str]] = None, team_model_id: str = None,
+                   search_model_id: str = None, wikipedia_model_id: str = None,
                    enable_wikipedia: bool = True) -> Any:
         """
         Create Team Agent with built-in micro agents and user-defined agents
@@ -171,26 +186,36 @@ class TeamConfig:
           - Search Agent: Uses Tavily to research and extract entities
           - Wikipedia Agent (optional): Enriches entities with Wikipedia links and Wikidata IDs
         
+        NOTE: All agents use GPT-4o by default (configured in Config)
+        
         Args:
             topic: Research topic
             goals: Optional list of research goals
-            model: Model type ("testing" or "production"), None uses default from Config
+            team_model_id: Model ID for team micro agents, defaults to Config.TEAM_AGENT_MODEL (GPT-4o)
+            search_model_id: Model ID for Search Agent, defaults to Config.SEARCH_AGENT_MODEL (GPT-4o)
+            wikipedia_model_id: Model ID for Wikipedia Agent, defaults to Config.WIKIPEDIA_AGENT_MODEL (GPT-4o)
             enable_wikipedia: Whether to include Wikipedia agent for entity enrichment
             
         Returns:
             TeamAgent object
         """
-        model_id = Config.get_model_id(model)
+        # Use configured defaults if not specified
+        if team_model_id is None:
+            team_model_id = Config.TEAM_AGENT_MODEL
+        if search_model_id is None:
+            search_model_id = Config.SEARCH_AGENT_MODEL
+        if wikipedia_model_id is None:
+            wikipedia_model_id = Config.WIKIPEDIA_AGENT_MODEL
         
         # Create Search Agent WITHOUT WorkflowTask
         # This allows Mentalist to plan dynamically
-        search_agent = TeamConfig.create_search_agent(topic, model)
+        search_agent = TeamConfig.create_search_agent(topic, search_model_id)
         
         # Create Wikipedia Agent if enabled and configured
         user_agents = [search_agent]
         wikipedia_agent = None
         if enable_wikipedia:
-            wikipedia_agent = TeamConfig.create_wikipedia_agent(model)
+            wikipedia_agent = TeamConfig.create_wikipedia_agent(wikipedia_model_id)
             if wikipedia_agent:
                 user_agents.append(wikipedia_agent)
                 logger.info("Wikipedia agent added to team for entity enrichment")
@@ -224,7 +249,7 @@ class TeamConfig:
             description=f"OSINT research team for topic: {topic}",
             instructions=mentalist_instructions,
             agents=user_agents,  # User-defined agents (no WorkflowTask)
-            llm_id=model_id,  # Model for micro agents (Mentalist, Inspector, etc.)
+            llm_id=team_model_id,  # Model for micro agents (Mentalist, Inspector, etc.)
             use_mentalist=True,  # Enable Mentalist for dynamic planning
             use_inspector=True,  # Enable Inspector for quality review
             num_inspectors=1,  # One inspector
@@ -232,6 +257,10 @@ class TeamConfig:
         )
         
         logger.info(f"Created Team Agent with ID: {team.id}")
+        logger.info(f"Team micro agents model: {team_model_id} (GPT-4o)")
+        logger.info(f"Search Agent model: {search_model_id} (GPT-4o)")
+        if wikipedia_agent:
+            logger.info(f"Wikipedia Agent model: {wikipedia_model_id} (GPT-4o)")
         logger.info(f"Team includes: Mentalist, Inspector, Orchestrator, Feedback Combiner, Response Generator (built-in)")
         agent_names = "Search Agent (with Tavily tool)"
         if wikipedia_agent:

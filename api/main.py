@@ -101,11 +101,19 @@ async def run_team_task(team_id: str, topic: str, goals: list):
     try:
         # Update status to running
         store.update_team_status(team_id, "running")
+        
+        # Get interaction limit from team data
+        team_data = store.get_team(team_id)
+        interaction_limit = team_data.get("interaction_limit", 50)
+        
         store.add_log_entry(team_id, f"Starting team creation for topic: {topic}")
+        store.add_log_entry(team_id, f"Interaction limit: {interaction_limit} steps")
         logger.info(f"Team {team_id}: Creating team agent for topic: {topic}")
+        logger.info(f"Team {team_id}: Interaction limit set to {interaction_limit}")
         
         # Create team agent with built-in micro agents and Search Agent
-        team = TeamConfig.create_team(topic, goals, model="testing")
+        # Uses default GPT-4o for all agents (configured in Config)
+        team = TeamConfig.create_team(topic, goals)
         
         # Store team ID
         store.set_aixplain_agent_id(team_id, team.id)
@@ -554,8 +562,8 @@ def get_agent_configuration():
             }
     
     # Get model configuration
-    model_id = Config.get_model_id()
-    model_name = "GPT-4o" if model_id == Config.MODELS["production"] else "GPT-4o Mini"
+    model_id = Config.TEAM_AGENT_MODEL
+    model_name = "GPT-4o"  # All agents use GPT-4o
     
     # Built-in agents (always present)
     built_in_agents = [
@@ -1105,11 +1113,16 @@ async def get_aggregate_stats(
         
         # Track completed teams for trends
         if team.get("status") == "completed":
+            # Safely get execution stats
+            exec_stats = {}
+            if agent_response and isinstance(agent_response, dict):
+                exec_stats = agent_response.get("executionStats", {})
+            
             completed_teams.append({
                 "team_id": team["team_id"],
                 "created_at": team["created_at"],
-                "runtime": agent_response.get("executionStats", {}).get("runtime", 0) if agent_response else 0,
-                "credits": agent_response.get("executionStats", {}).get("credits", 0) if agent_response else 0
+                "runtime": exec_stats.get("runtime", 0) if exec_stats else 0,
+                "credits": exec_stats.get("credits", 0) if exec_stats else 0
             })
     
     # Sort top consumers by credits (descending)

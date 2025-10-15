@@ -405,8 +405,8 @@ See `.kiro/specs/osint-agent-team-system/tasks.md` for detailed task completion 
 ## Documentation
 
 - **[Architecture](docs/ARCHITECTURE.md)** - System design, agent coordination, and data flow
+- **[Known Issues](KNOWN_ISSUES.md)** - Resolved issues, current limitations, and debugging tips
 - **[Contributing](docs/CONTRIBUTING.md)** - Development setup, workflow, and code style
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and debugging tips
 
 ## License
 

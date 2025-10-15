@@ -23,12 +23,24 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 markers = [
-    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "unit: marks tests as unit tests (fast, no external dependencies)",
+    "integration: marks tests as integration tests (requires backend running)",
+    "e2e: marks tests as end-to-end tests (requires backend + external APIs)",
     "regression: marks tests as regression tests to prevent feature degradation",
+    "slow: marks tests as slow running tests",
 ]
 # Only collect test_*.py files (excludes manual_*.py, demo_*.py, debug_*.py, verify_*.py)
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 testpaths = ["tests"]
-norecursedirs = [".git", ".tox", "dist", "build", "*.egg"]
+norecursedirs = [".git", ".tox", "dist", "build", "*.egg", "__pycache__"]
+
+# Default: run only unit tests (fast)
+addopts = "-v --tb=short --strict-markers"
+
+# Ignore warnings from dependencies
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]

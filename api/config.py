@@ -9,12 +9,21 @@ class Config:
     """Central configuration for models, tools, and system settings"""
     
     # Model Configuration
-    # Default to GPT-4o for best quality, can dial back to GPT-4o Mini for cost optimization
-    DEFAULT_MODEL = "production"  # Use "production" (GPT-4o) by default
+    # Each agent is explicitly configured with a specific model
+    # All agents use GPT-4o for best quality and compatibility with aixplain TeamAgent
     
+    # Available Models
+    GPT_4O = "6646261c6eb563165658bbb1"  # GPT-4o - Best quality, proven to work
+    
+    # Agent-Specific Model Configuration
+    SEARCH_AGENT_MODEL = GPT_4O  # Search Agent: entity extraction, needs strong reasoning
+    WIKIPEDIA_AGENT_MODEL = GPT_4O  # Wikipedia Agent: entity matching and linking
+    TEAM_AGENT_MODEL = GPT_4O  # Team micro agents: Mentalist, Inspector, Orchestrator, Response Generator
+    
+    # Legacy support for existing code
+    DEFAULT_MODEL = "gpt4o"
     MODELS: Dict[str, str] = {
-        "production": "6646261c6eb563165658bbb1",  # GPT-4o - Best quality
-        "testing": "669a63646eb56306647e1091",      # GPT-4o Mini - Cost-effective
+        "gpt4o": GPT_4O,
     }
     
     # Tool IDs from aixplain marketplace
