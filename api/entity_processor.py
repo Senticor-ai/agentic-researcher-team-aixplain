@@ -225,15 +225,27 @@ class EntityProcessor:
             # For team agents, check intermediate_steps for Search Agent output
             # The Response Generator reformats the output as markdown, so we need
             # to get the raw output from the Search Agent
-            if "data" in agent_response and "intermediate_steps" in agent_response["data"]:
+            # Check both locations: root level and under "data"
+            intermediate_steps = None
+            if "intermediate_steps" in agent_response:
+                intermediate_steps = agent_response["intermediate_steps"]
+            elif "data" in agent_response and "intermediate_steps" in agent_response["data"]:
                 intermediate_steps = agent_response["data"]["intermediate_steps"]
+            
+            if intermediate_steps:
                 logger.info(f"Found {len(intermediate_steps)} intermediate steps")
                 
-                # Look for Search Agent output
+                # Log all agent names to help debug
+                agent_names = [step.get("agent", "unknown") for step in intermediate_steps]
+                logger.info(f"Agent names in steps: {agent_names}")
+                
+                # Look for Search Agent output (try multiple possible names)
+                search_agent_names = ["Search Agent", "search_agent", "SearchAgent", "search"]
                 for step in intermediate_steps:
-                    if step.get("agent") == "Search Agent":
+                    agent_name = step.get("agent", "")
+                    if any(name.lower() in agent_name.lower() for name in search_agent_names):
                         search_output = step.get("output")
-                        logger.info(f"Found Search Agent output: {type(search_output)}")
+                        logger.info(f"Found Search Agent output from '{agent_name}': {type(search_output)}")
                         
                         if isinstance(search_output, dict) and "entities" in search_output:
                             logger.info(f"Search Agent returned {len(search_output['entities'])} entities")
@@ -246,6 +258,8 @@ class EntityProcessor:
                             # Try to parse as JSON first
                             try:
                                 parsed = json.loads(search_output)
+                                
+                                # Check if entities are in standard format
                                 if isinstance(parsed, dict) and "entities" in parsed:
                                     logger.info(f"Parsed Search Agent output as JSON: {len(parsed['entities'])} entities")
                                     # Merge Wikipedia data
@@ -253,6 +267,18 @@ class EntityProcessor:
                                         parsed, wikipedia_data
                                     )
                                     return entities_with_wiki
+                                
+                                # Check if entities are grouped by type (e.g., "Person Entities", "Organization Entities")
+                                elif isinstance(parsed, dict) and any(key.endswith(" Entities") for key in parsed.keys()):
+                                    logger.info("Found grouped entity format, converting to standard format")
+                                    converted = EntityProcessor.convert_grouped_entities(parsed)
+                                    logger.info(f"Converted {len(converted['entities'])} entities from grouped format")
+                                    # Merge Wikipedia data
+                                    entities_with_wiki = EntityProcessor.merge_wikipedia_data(
+                                        converted, wikipedia_data
+                                    )
+                                    return entities_with_wiki
+                                    
                             except json.JSONDecodeError:
                                 logger.info("Search Agent output is not valid JSON, trying ast.literal_eval")
                             
@@ -373,7 +399,15 @@ class EntityProcessor:
                 # If all strategies failed
                 if entities_data is None:
                     logger.warning("All parsing strategies failed")
-                    logger.warning(f"Output was: {output_text[:500]}...")
+                    logger.warning(f"Output was: {output_text[:1000]}...")
+                    logger.warning("Trying one more fallback: look for any entity-like patterns in markdown")
+                    
+                    # Last resort: try to extract entities from markdown headings/lists
+                    fallback_entities = EntityProcessor.parse_markdown_entities(output_text)
+                    if fallback_entities and fallback_entities.get("entities"):
+                        logger.info(f"Fallback markdown parser found {len(fallback_entities['entities'])} entities")
+                        return fallback_entities
+                    
                     return {"entities": []}
                     
             else:
@@ -390,9 +424,14 @@ class EntityProcessor:
                 logger.warning("Agent output missing 'entities' field")
                 logger.warning(f"Available fields: {list(entities_data.keys())}")
                 
+                # Check if entities are grouped by type (e.g., "Person Entities", "Organization Entities")
+                if any(key.endswith(" Entities") for key in entities_data.keys()):
+                    logger.info("Found grouped entity format in output, converting to standard format")
+                    entities_data = EntityProcessor.convert_grouped_entities(entities_data)
+                    logger.info(f"Converted {len(entities_data['entities'])} entities from grouped format")
                 # Try to be flexible - maybe entities are at root level
                 # or in a different structure
-                if isinstance(entities_data, list):
+                elif isinstance(entities_data, list):
                     # Maybe the whole thing is a list of entities
                     logger.info("Treating root list as entities")
                     entities_data = {"entities": entities_data}
@@ -628,6 +667,207 @@ class EntityProcessor:
             entity["legislationJurisdiction"] = jurisdiction
         
         return entity
+    
+    @staticmethod
+    def convert_grouped_entities(grouped_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert grouped entity format to standard format
+        
+        Input format:
+        {
+            "Person Entities": [{name, job_title, description, sources}, ...],
+            "Organization Entities": [{name, description, sources}, ...],
+            "Event Entities": [{name, date, location, description, sources}, ...],
+            "Topic Entities": [{name, description, relationship, sources}, ...]
+        }
+        
+        Output format:
+        {
+            "entities": [
+                {type: "Person", name, jobTitle, description, sources},
+                {type: "Organization", name, description, sources},
+                ...
+            ]
+        }
+        
+        Args:
+            grouped_data: Dictionary with entities grouped by type
+            
+        Returns:
+            Dictionary with flat entities array
+        """
+        entities = []
+        
+        # Map group names to entity types
+        type_mapping = {
+            "Person Entities": "Person",
+            "Organization Entities": "Organization",
+            "Event Entities": "Event",
+            "Topic Entities": "Topic",
+            "Policy Entities": "Policy"
+        }
+        
+        for group_name, entity_list in grouped_data.items():
+            if not isinstance(entity_list, list):
+                continue
+            
+            # Determine entity type
+            entity_type = type_mapping.get(group_name)
+            if not entity_type:
+                # Try to infer from group name
+                if "person" in group_name.lower() or "people" in group_name.lower():
+                    entity_type = "Person"
+                elif "organization" in group_name.lower():
+                    entity_type = "Organization"
+                elif "event" in group_name.lower():
+                    entity_type = "Event"
+                elif "topic" in group_name.lower():
+                    entity_type = "Topic"
+                elif "polic" in group_name.lower():
+                    entity_type = "Policy"
+                else:
+                    logger.warning(f"Unknown entity group: {group_name}")
+                    continue
+            
+            # Convert each entity in the group
+            for entity_data in entity_list:
+                if not isinstance(entity_data, dict):
+                    continue
+                
+                entity = {
+                    "type": entity_type,
+                    "name": entity_data.get("name", ""),
+                    "description": entity_data.get("description", ""),
+                }
+                
+                # Parse sources (handle both string and list formats)
+                sources = []
+                raw_sources = entity_data.get("sources", [])
+                if isinstance(raw_sources, list):
+                    for source in raw_sources:
+                        if isinstance(source, str):
+                            # Parse "URL: excerpt" format
+                            if ": " in source:
+                                url_part, excerpt_part = source.split(": ", 1)
+                                url = url_part.strip()
+                                excerpt = excerpt_part.strip().strip('"')
+                                sources.append({"url": url, "excerpt": excerpt})
+                            else:
+                                sources.append({"url": source.strip(), "excerpt": None})
+                        elif isinstance(source, dict):
+                            sources.append(source)
+                
+                entity["sources"] = sources
+                
+                # Add type-specific fields
+                if entity_type == "Person":
+                    if "job_title" in entity_data:
+                        entity["jobTitle"] = entity_data["job_title"]
+                    if "url" in entity_data:
+                        entity["url"] = entity_data["url"]
+                
+                elif entity_type == "Organization":
+                    if "url" in entity_data:
+                        entity["url"] = entity_data["url"]
+                    if "website" in entity_data:
+                        entity["url"] = entity_data["website"]
+                
+                elif entity_type == "Event":
+                    if "date" in entity_data:
+                        entity["startDate"] = entity_data["date"]
+                    if "location" in entity_data:
+                        entity["location"] = entity_data["location"]
+                    if "organizer" in entity_data:
+                        entity["organizer"] = entity_data["organizer"]
+                
+                elif entity_type == "Topic":
+                    if "about" in entity_data:
+                        entity["about"] = entity_data["about"]
+                    if "relationship" in entity_data:
+                        entity["about"] = entity_data["relationship"]
+                
+                elif entity_type == "Policy":
+                    if "identifier" in entity_data:
+                        entity["legislationIdentifier"] = entity_data["identifier"]
+                    if "effective_date" in entity_data:
+                        entity["legislationDate"] = entity_data["effective_date"]
+                    if "jurisdiction" in entity_data:
+                        entity["legislationJurisdiction"] = entity_data["jurisdiction"]
+                
+                entities.append(entity)
+        
+        logger.info(f"Converted {len(entities)} entities from grouped format")
+        return {"entities": entities}
+    
+    @staticmethod
+    def parse_markdown_entities(text: str) -> Dict[str, Any]:
+        """
+        Fallback parser for markdown-formatted entity lists
+        
+        Handles formats like:
+        ## People
+        - **Name**: Description
+        
+        ### Organizations  
+        1. **Name** - Description
+        
+        Args:
+            text: Markdown text
+            
+        Returns:
+            Dictionary with entities array
+        """
+        import re
+        entities = []
+        
+        # Look for sections with entity type headers
+        # Pattern: ## People, ### Organizations, etc.
+        sections = re.split(r'\n#{1,3}\s+(People|Persons|Organizations|Topics|Events|Policies)', text, flags=re.IGNORECASE)
+        
+        for i in range(1, len(sections), 2):
+            if i + 1 >= len(sections):
+                break
+                
+            entity_type_raw = sections[i].strip()
+            content = sections[i + 1]
+            
+            # Normalize entity type
+            entity_type = "Person" if "person" in entity_type_raw.lower() or "people" in entity_type_raw.lower() else \
+                         "Organization" if "organization" in entity_type_raw.lower() else \
+                         "Topic" if "topic" in entity_type_raw.lower() else \
+                         "Event" if "event" in entity_type_raw.lower() else \
+                         "Policy" if "polic" in entity_type_raw.lower() else None
+            
+            if not entity_type:
+                continue
+            
+            # Extract entities from lists (- or 1. format)
+            # Pattern: - **Name**: Description or 1. **Name** - Description
+            entity_patterns = [
+                r'[-*]\s+\*\*([^*]+)\*\*[:\-]\s*([^\n]+)',  # - **Name**: Description
+                r'\d+\.\s+\*\*([^*]+)\*\*[:\-]\s*([^\n]+)',  # 1. **Name**: Description
+                r'[-*]\s+([^:\n]+):\s*([^\n]+)',  # - Name: Description
+            ]
+            
+            for pattern in entity_patterns:
+                matches = re.findall(pattern, content)
+                for name, description in matches:
+                    name = name.strip()
+                    description = description.strip()
+                    
+                    if name and len(name) > 1:  # Basic validation
+                        entity = {
+                            "type": entity_type,
+                            "name": name,
+                            "description": description,
+                            "sources": []
+                        }
+                        entities.append(entity)
+        
+        if entities:
+            logger.info(f"Markdown fallback parser extracted {len(entities)} entities")
+        
+        return {"entities": entities}
     
     @staticmethod
     def parse_text_format(text: str) -> Dict[str, Any]:

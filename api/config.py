@@ -10,23 +10,25 @@ class Config:
     
     # Model Configuration
     # Each agent is explicitly configured with a specific model
-    # All agents use GPT-4o for best quality and compatibility with aixplain TeamAgent
+    # All agents use Llama 3.3 70B Versatile (Groq) for best quality and compatibility with aixplain TeamAgent
     
     # Available Models
-    GPT_4O = "6646261c6eb563165658bbb1"  # GPT-4o - Current model
+    LLAMA_3_3_70B_VERSATILE = "677c16166eb563bb611623c1"  # Llama 3.3 70B Versatile (Groq) - Current model
+    GPT_4O = "6646261c6eb563165658bbb1"  # GPT-4o
     QWEN3_235B = "6810d040a289e15e3e5dd141"  # Qwen3 235B
     GEMINI_2_FLASH_EXP = "6759db476eb56303857a07c1"  # Gemini 2.0 Flash (Exp)
     GPT_OSS_120B = "6895f768d50c89537c1cf24e"  # GPT OSS 120b - Open source model
     GPT_5_MINI = "6895d6d1d50c89537c1cf237"  # GPT-5 Mini - Latest model
     
     # Agent-Specific Model Configuration
-    SEARCH_AGENT_MODEL = GPT_4O  # Search Agent: entity extraction, needs strong reasoning
-    WIKIPEDIA_AGENT_MODEL = GPT_4O  # Wikipedia Agent: entity matching and linking
-    TEAM_AGENT_MODEL = GPT_4O  # Team micro agents: Mentalist, Inspector, Orchestrator, Response Generator
+    SEARCH_AGENT_MODEL = LLAMA_3_3_70B_VERSATILE  # Search Agent: entity extraction, needs strong reasoning
+    WIKIPEDIA_AGENT_MODEL = LLAMA_3_3_70B_VERSATILE  # Wikipedia Agent: entity matching and linking
+    TEAM_AGENT_MODEL = LLAMA_3_3_70B_VERSATILE  # Team micro agents: Mentalist, Inspector, Orchestrator, Response Generator
     
     # Legacy support for existing code
-    DEFAULT_MODEL = "gpt4o"
+    DEFAULT_MODEL = "llama33_70b"
     MODELS: Dict[str, str] = {
+        "llama33_70b": LLAMA_3_3_70B_VERSATILE,
         "gpt4o": GPT_4O,
         "qwen3235b": QWEN3_235B,
         "gemini2flash": GEMINI_2_FLASH_EXP,
@@ -36,11 +38,12 @@ class Config:
     
     # Model ID to display name mapping
     MODEL_NAMES: Dict[str, str] = {
+        LLAMA_3_3_70B_VERSATILE: "Llama 3.3 70B Versatile (Groq)",
+        GPT_4O: "GPT-4o",
         QWEN3_235B: "Qwen3 235B",
         GEMINI_2_FLASH_EXP: "Gemini 2.0 Flash (Exp)",
         GPT_OSS_120B: "GPT OSS 120b",
         GPT_5_MINI: "GPT-5 Mini",
-        GPT_4O: "GPT-4o",
     }
     
     # Tool IDs from aixplain marketplace
