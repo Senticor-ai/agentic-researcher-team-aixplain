@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any, Tuple
 
-from api.models import PersonEntity, OrganizationEntity, EntitySource
+from api.models import PersonEntity, OrganizationEntity, TopicEntity, EventEntity, PolicyEntity, EntitySource
 from api.entity_validator import EntityValidator
 
 logger = logging.getLogger(__name__)
@@ -1025,6 +1025,41 @@ class EntityProcessor:
                     )
                     entity_dict = org.model_dump(by_alias=True)
                     
+                elif entity_type == "Topic":
+                    topic = TopicEntity(
+                        name=entity.get("name", ""),
+                        description=entity.get("description"),
+                        about=entity.get("about"),
+                        sources=sources
+                    )
+                    entity_dict = topic.model_dump(by_alias=True)
+                    
+                elif entity_type == "Event":
+                    event = EventEntity(
+                        name=entity.get("name", ""),
+                        description=entity.get("description"),
+                        startDate=entity.get("startDate"),
+                        endDate=entity.get("endDate"),
+                        location=entity.get("location"),
+                        organizer=entity.get("organizer"),
+                        sources=sources
+                    )
+                    entity_dict = event.model_dump(by_alias=True)
+                    
+                elif entity_type == "Policy":
+                    policy = PolicyEntity(
+                        name=entity.get("name", ""),
+                        description=entity.get("description"),
+                        legislationIdentifier=entity.get("legislationIdentifier"),
+                        dateCreated=entity.get("dateCreated"),
+                        dateModified=entity.get("dateModified"),
+                        legislationDate=entity.get("legislationDate"),
+                        expirationDate=entity.get("expirationDate"),
+                        legislationJurisdiction=entity.get("legislationJurisdiction"),
+                        sources=sources
+                    )
+                    entity_dict = policy.model_dump(by_alias=True)
+                    
                 else:
                     logger.warning(f"Unknown entity type: {entity_type}")
                     continue
@@ -1085,13 +1120,43 @@ class EntityProcessor:
                 "name": entity.get("name"),
             }
             
-            # Add optional fields
+            # Add optional fields (common to all types)
             if entity.get("description"):
                 jsonld_entity["description"] = entity["description"]
             if entity.get("url"):
                 jsonld_entity["url"] = entity["url"]
+            
+            # Person-specific fields
             if entity.get("jobTitle"):
                 jsonld_entity["jobTitle"] = entity["jobTitle"]
+            
+            # Topic-specific fields
+            if entity.get("about"):
+                jsonld_entity["about"] = entity["about"]
+            
+            # Event-specific fields
+            if entity.get("startDate"):
+                jsonld_entity["startDate"] = entity["startDate"]
+            if entity.get("endDate"):
+                jsonld_entity["endDate"] = entity["endDate"]
+            if entity.get("location"):
+                jsonld_entity["location"] = entity["location"]
+            if entity.get("organizer"):
+                jsonld_entity["organizer"] = entity["organizer"]
+            
+            # Policy-specific fields
+            if entity.get("legislationIdentifier"):
+                jsonld_entity["legislationIdentifier"] = entity["legislationIdentifier"]
+            if entity.get("dateCreated"):
+                jsonld_entity["dateCreated"] = entity["dateCreated"]
+            if entity.get("dateModified"):
+                jsonld_entity["dateModified"] = entity["dateModified"]
+            if entity.get("legislationDate"):
+                jsonld_entity["legislationDate"] = entity["legislationDate"]
+            if entity.get("expirationDate"):
+                jsonld_entity["expirationDate"] = entity["expirationDate"]
+            if entity.get("legislationJurisdiction"):
+                jsonld_entity["legislationJurisdiction"] = entity["legislationJurisdiction"]
             
             # Add Wikipedia enrichment data
             if entity.get("sameAs"):
