@@ -4,6 +4,7 @@ Honeycomb OSINT Agent Team System - Main API Application
 import os
 import json
 import logging
+import subprocess
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -39,11 +40,39 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def get_git_info():
+    """Get current git SHA and repo URL"""
+    try:
+        # Get current commit SHA
+        sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], 
+                                     stderr=subprocess.DEVNULL).decode('utf-8').strip()
+        
+        # Get remote URL
+        remote_url = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'],
+                                            stderr=subprocess.DEVNULL).decode('utf-8').strip()
+        
+        # Convert SSH URL to HTTPS if needed
+        if remote_url.startswith('git@'):
+            remote_url = remote_url.replace(':', '/').replace('git@', 'https://')
+        if remote_url.endswith('.git'):
+            remote_url = remote_url[:-4]
+        
+        return sha, remote_url
+    except Exception as e:
+        logger.warning(f"Failed to get git info: {e}")
+        return None, None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     print("Starting Honeycomb OSINT API...")
+    git_sha, git_repo = get_git_info()
+    if git_sha:
+        print(f"Running version: {git_sha[:8]}")
+        if git_repo:
+            print(f"Repository: {git_repo}")
     yield
     # Shutdown
     print("Shutting down Honeycomb OSINT API...")
@@ -325,14 +354,27 @@ async def run_team_task(team_id: str, topic: str, goals: list):
 @app.post("/api/v1/agent-teams", response_model=AgentTeamResponse)
 async def create_agent_team(request: CreateAgentTeamRequest, background_tasks: BackgroundTasks):
     """Create a new agent team for research"""
+    from api.config import Config
+    
     store = get_store()
+    
+    # Get git info
+    git_sha, git_repo_url = get_git_info()
+    
+    # Get model info
+    model_id = Config.TEAM_AGENT_MODEL
+    model_name = Config.get_model_name(model_id)
     
     # Create team in storage
     team = store.create_team(
         topic=request.topic,
         goals=request.goals,
         interaction_limit=request.interaction_limit or 50,
-        mece_strategy=request.mece_strategy or "depth_first"
+        mece_strategy=request.mece_strategy or "depth_first",
+        model_id=model_id,
+        model_name=model_name,
+        git_sha=git_sha,
+        git_repo_url=git_repo_url
     )
     
     # Schedule team creation and execution in background
@@ -563,7 +605,7 @@ def get_agent_configuration():
     
     # Get model configuration
     model_id = Config.TEAM_AGENT_MODEL
-    model_name = "GPT-4o"  # All agents use GPT-4o
+    model_name = Config.get_model_name(model_id)
     
     # Built-in agents (always present)
     built_in_agents = [
@@ -703,7 +745,54 @@ def get_agent_configuration():
         "user_defined_agents": user_defined_agents,
         "configured_tools": configured_tools,
         "default_model": model_name,
-        "model_id": model_id
+        "model_id": model_id,
+        "coordination": {
+            "approach": "Dynamic Planning",
+            "description": "No predefined workflow - agents coordinate dynamically based on the research needs",
+            "roles": [
+                {
+                    "agent": "Mentalist",
+                    "responsibility": "Analyzes topic and creates dynamic research strategy",
+                    "note": "Plans on-the-fly, not following a fixed workflow"
+                },
+                {
+                    "agent": "Orchestrator",
+                    "responsibility": "Routes tasks to appropriate agents based on Mentalist's plan",
+                    "note": "Spawns agents as needed, not in a predetermined sequence"
+                },
+                {
+                    "agent": "Search Agent",
+                    "responsibility": "Executes research tasks when called by Orchestrator",
+                    "note": "May be invoked multiple times for different aspects"
+                },
+                {
+                    "agent": "Wikipedia Agent",
+                    "responsibility": "Enriches extracted entities with Wikipedia links and Wikidata IDs",
+                    "note": "Called after entity extraction to add authoritative references"
+                },
+                {
+                    "agent": "Inspector",
+                    "responsibility": "Reviews steps and output for quality",
+                    "note": "Provides feedback throughout execution"
+                },
+                {
+                    "agent": "Feedback Combiner",
+                    "responsibility": "Aggregates inspection feedback",
+                    "note": "Consolidates reviews from multiple inspection points"
+                },
+                {
+                    "agent": "Response Generator",
+                    "responsibility": "Synthesizes final output from all agent results",
+                    "note": "Creates structured JSON-LD Sachstand"
+                }
+            ]
+        },
+        "default_settings": {
+            "interaction_limit": 50,
+            "mece_strategy": "depth_first",
+            "inspector_targets": ["steps", "output"],
+            "num_inspectors": 1
+        }
     }
 
 

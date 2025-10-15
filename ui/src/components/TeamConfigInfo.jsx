@@ -35,28 +35,38 @@ function TeamConfigInfo() {
     }
 
     return {
-      model: agentConfig.default_model || agentConfig.model || "GPT-4o Mini (Testing Mode)",
+      model: agentConfig.default_model,
       builtInAgents: agentConfig.built_in_agents?.map(agent => ({
         name: agent.name,
         role: agent.role,
         description: agent.description,
         model: agent.model,
-        capabilities: agent.capabilities || [],
+        capabilities: agent.capabilities,
         icon: getAgentIcon(agent.name),
         color: getAgentColor(agent.name)
-      })) || [],
+      })),
       userDefinedAgents: agentConfig.user_defined_agents?.map(agent => ({
         name: agent.name,
         role: agent.role,
         description: agent.description,
         model: agent.model,
-        tools: agent.tools || [],
-        capabilities: agent.capabilities || getAgentCapabilities(agent.name),
+        tools: agent.tools,
+        capabilities: agent.capabilities,
         searchStrategy: agent.search_strategy,
         languagesSupported: agent.languages_supported,
+        toolId: agent.tool_id,
+        usedBy: agent.used_by,
+        costPerRequest: agent.cost_per_request,
         icon: getAgentIcon(agent.name),
         color: getAgentColor(agent.name)
-      })) || []
+      })),
+      coordination: agentConfig.coordination,
+      defaultSettings: {
+        interactionLimit: agentConfig.default_settings?.interaction_limit,
+        meceStrategy: agentConfig.default_settings?.mece_strategy,
+        inspectorTargets: agentConfig.default_settings?.inspector_targets,
+        numInspectors: agentConfig.default_settings?.num_inspectors
+      }
     };
   };
 
@@ -87,152 +97,7 @@ function TeamConfigInfo() {
     return colors[name] || '#95a5a6';
   };
 
-  const getAgentCapabilities = (name) => {
-    const capabilities = {
-      'Search Agent': [
-        "Multi-source web search for comprehensive coverage",
-        "Person and Organization entity extraction",
-        "Real source URLs and excerpts citation",
-        "German and English language search support",
-        "Intelligent search strategy optimization",
-        "Government and official source prioritization"
-      ],
-      'Wikipedia Agent': [
-        "Wikipedia entity verification and lookup",
-        "Multi-language Wikipedia URL retrieval (de, en, fr)",
-        "Wikidata ID extraction for authoritative linking",
-        "sameAs property generation for deduplication",
-        "Entity cross-referencing and validation",
-        "Authoritative source attribution"
-      ]
-    };
-    return capabilities[name] || [];
-  };
-
-  const displayConfig = getDisplayConfig();
-
-  // Default config structure for fallback
-  const teamConfig = {
-    model: {
-      testing: "GPT-4o Mini",
-      production: "GPT-4o",
-      current: "GPT-4o Mini (Testing Mode)"
-    },
-    builtInAgents: [
-      {
-        name: "Mentalist",
-        role: "Strategic Planner",
-        description: "Plans research strategy and coordinates the team dynamically",
-        icon: "🧠",
-        color: "#9b59b6"
-      },
-      {
-        name: "Inspector",
-        role: "Quality Monitor",
-        description: "Reviews intermediate steps and final output for quality assurance",
-        icon: "🔍",
-        color: "#e74c3c"
-      },
-      {
-        name: "Orchestrator",
-        role: "Agent Spawner",
-        description: "Routes tasks to appropriate agents based on Mentalist's plan",
-        icon: "🎯",
-        color: "#3498db"
-      },
-      {
-        name: "Feedback Combiner",
-        role: "Feedback Aggregator",
-        description: "Consolidates inspection feedback from multiple reviewers",
-        icon: "📊",
-        color: "#1abc9c"
-      },
-      {
-        name: "Response Generator",
-        role: "Output Synthesizer",
-        description: "Creates final structured output from agent results",
-        icon: "📝",
-        color: "#f39c12"
-      }
-    ],
-    userDefinedAgents: [
-      {
-        name: "Search Agent",
-        description: "OSINT research agent with multiple search tools for comprehensive coverage",
-        tools: ["Tavily Search", "Google Search"],
-        capabilities: [
-          "Multi-source web search for comprehensive coverage",
-          "Person and Organization entity extraction",
-          "Real source URLs and excerpts citation",
-          "German and English language search support",
-          "Intelligent search strategy optimization",
-          "Government and official source prioritization"
-        ],
-        icon: "🔎",
-        color: "#2ecc71"
-      },
-      {
-        name: "Wikipedia Agent",
-        description: "Entity enrichment agent with Wikipedia tool",
-        tools: ["Wikipedia API"],
-        capabilities: [
-          "Search Wikipedia for entity verification",
-          "Retrieve Wikipedia URLs in multiple languages (de, en, fr)",
-          "Extract Wikidata IDs for entity linking",
-          "Add sameAs properties for deduplication"
-        ],
-        icon: "📚",
-        color: "#e67e22"
-      }
-    ],
-    coordination: {
-      approach: "Dynamic Planning",
-      description: "No predefined workflow - agents coordinate dynamically based on the research needs",
-      roles: [
-        {
-          agent: "Mentalist",
-          responsibility: "Analyzes topic and creates dynamic research strategy",
-          note: "Plans on-the-fly, not following a fixed workflow"
-        },
-        {
-          agent: "Orchestrator",
-          responsibility: "Routes tasks to appropriate agents based on Mentalist's plan",
-          note: "Spawns agents as needed, not in a predetermined sequence"
-        },
-        {
-          agent: "Search Agent",
-          responsibility: "Executes research tasks when called by Orchestrator",
-          note: "May be invoked multiple times for different aspects"
-        },
-        {
-          agent: "Wikipedia Agent",
-          responsibility: "Enriches extracted entities with Wikipedia links and Wikidata IDs",
-          note: "Called after entity extraction to add authoritative references"
-        },
-        {
-          agent: "Inspector",
-          responsibility: "Reviews steps and output for quality",
-          note: "Provides feedback throughout execution"
-        },
-        {
-          agent: "Feedback Combiner",
-          responsibility: "Aggregates inspection feedback",
-          note: "Consolidates reviews from multiple inspection points"
-        },
-        {
-          agent: "Response Generator",
-          responsibility: "Synthesizes final output from all agent results",
-          note: "Creates structured JSON-LD Sachstand"
-        }
-      ]
-    },
-    defaultSettings: {
-      interactionLimit: 50,
-      meceStrategy: "depth_first",
-      inspectorTargets: ["steps", "output"],
-      numInspectors: 1
-    }
-  };
+  const config = getDisplayConfig();
 
   if (loading) {
     return (
@@ -248,23 +113,21 @@ function TeamConfigInfo() {
     );
   }
 
-  if (error) {
+  if (error || !config) {
     return (
       <Card className="team-config-info">
         <div className="config-header">
           <h3>🤖 Agent Team Configuration</h3>
         </div>
         <div style={{ textAlign: 'center', padding: '2rem', color: '#e74c3c' }}>
-          <p>⚠️ {error}</p>
+          <p>⚠️ {error || 'Failed to load configuration'}</p>
           <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
-            Using fallback configuration
+            Please check your API connection
           </p>
         </div>
       </Card>
     );
   }
-
-  const config = displayConfig || teamConfig;
 
   return (
     <Card className="team-config-info">
@@ -289,14 +152,14 @@ function TeamConfigInfo() {
           <span className="summary-icon">🤖</span>
           <div className="summary-content">
             <div className="summary-label">Model</div>
-            <div className="summary-value">{config.model?.current || config.model}</div>
+            <div className="summary-value">{config.model}</div>
           </div>
         </div>
         <div className="summary-item">
           <span className="summary-icon">👥</span>
           <div className="summary-content">
             <div className="summary-label">Built-in Agents</div>
-            <div className="summary-value">{config.builtInAgents?.length || 0} Micro Agents</div>
+            <div className="summary-value">{config.builtInAgents.length} Micro Agents</div>
           </div>
         </div>
         <div className="summary-item">
@@ -304,8 +167,8 @@ function TeamConfigInfo() {
           <div className="summary-content">
             <div className="summary-label">Custom Agents</div>
             <div className="summary-value">
-              {config.userDefinedAgents?.length || 0} Agent{config.userDefinedAgents?.length !== 1 ? 's' : ''}
-              {config.userDefinedAgents?.length > 0 && (
+              {config.userDefinedAgents.length} Agent{config.userDefinedAgents.length !== 1 ? 's' : ''}
+              {config.userDefinedAgents.length > 0 && (
                 <span style={{ fontSize: '0.85em', color: '#666' }}>
                   {' '}({config.userDefinedAgents.map(a => a.name.replace(' Agent', '')).join(' + ')})
                 </span>
@@ -317,7 +180,7 @@ function TeamConfigInfo() {
           <span className="summary-icon">⚙️</span>
           <div className="summary-content">
             <div className="summary-label">Interaction Limit</div>
-            <div className="summary-value">{teamConfig.defaultSettings?.interactionLimit || 50} steps</div>
+            <div className="summary-value">{config.defaultSettings.interactionLimit} steps</div>
           </div>
         </div>
       </div>
@@ -331,7 +194,7 @@ function TeamConfigInfo() {
               These agents are automatically included in every team and handle coordination, quality control, and output generation.
             </p>
             <div className="agents-grid">
-              {config.builtInAgents?.map((agent, idx) => (
+              {config.builtInAgents.map((agent, idx) => (
                 <div key={idx} className="agent-card" style={{ borderLeftColor: agent.color }}>
                   <div className="agent-header">
                     <span className="agent-icon">{agent.icon}</span>
@@ -372,7 +235,7 @@ function TeamConfigInfo() {
               Custom agents with specialized tools for OSINT research and entity extraction.
             </p>
             <div className="agents-grid">
-              {config.userDefinedAgents?.map((agent, idx) => (
+              {config.userDefinedAgents.map((agent, idx) => (
                 <div key={idx} className="agent-card custom-agent" style={{ borderLeftColor: agent.color }}>
                   <div className="agent-header">
                     <span className="agent-icon">{agent.icon}</span>
@@ -383,13 +246,15 @@ function TeamConfigInfo() {
                           {agent.role}
                         </div>
                       )}
-                      <div className="agent-tools">
-                        {agent.tools.map((tool, tidx) => (
-                          <Tag key={tidx} minimal small>
-                            {tool}
-                          </Tag>
-                        ))}
-                      </div>
+                      {agent.tools && agent.tools.length > 0 && (
+                        <div className="agent-tools">
+                          {agent.tools.map((tool, tidx) => (
+                            <Tag key={tidx} minimal small>
+                              {tool}
+                            </Tag>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="agent-description">{agent.description}</div>
@@ -427,9 +292,9 @@ function TeamConfigInfo() {
 
           {/* Coordination Approach */}
           <div className="config-section">
-            <h4>🔄 {teamConfig.coordination.approach}</h4>
+            <h4>🔄 {config.coordination.approach}</h4>
             <p className="section-description">
-              {teamConfig.coordination.description}
+              {config.coordination.description}
             </p>
             <div className="coordination-info">
               <div className="coordination-note">
@@ -438,7 +303,7 @@ function TeamConfigInfo() {
                 This allows for flexible, adaptive research strategies.
               </div>
               <div className="roles-list">
-                {teamConfig.coordination.roles.map((role, idx) => (
+                {config.coordination.roles.map((role, idx) => (
                   <div key={idx} className="role-item">
                     <div className="role-header">
                       <span className="role-agent">{role.agent}</span>
@@ -460,19 +325,19 @@ function TeamConfigInfo() {
             <div className="settings-grid">
               <div className="setting-item">
                 <span className="setting-label">Interaction Limit:</span>
-                <span className="setting-value">{teamConfig.defaultSettings.interactionLimit} steps</span>
+                <span className="setting-value">{config.defaultSettings.interactionLimit} steps</span>
               </div>
               <div className="setting-item">
                 <span className="setting-label">MECE Strategy:</span>
-                <span className="setting-value">{teamConfig.defaultSettings.meceStrategy}</span>
+                <span className="setting-value">{config.defaultSettings.meceStrategy}</span>
               </div>
               <div className="setting-item">
                 <span className="setting-label">Inspector Targets:</span>
-                <span className="setting-value">{teamConfig.defaultSettings.inspectorTargets.join(', ')}</span>
+                <span className="setting-value">{config.defaultSettings.inspectorTargets.join(', ')}</span>
               </div>
               <div className="setting-item">
                 <span className="setting-label">Number of Inspectors:</span>
-                <span className="setting-value">{teamConfig.defaultSettings.numInspectors}</span>
+                <span className="setting-value">{config.defaultSettings.numInspectors}</span>
               </div>
             </div>
           </div>

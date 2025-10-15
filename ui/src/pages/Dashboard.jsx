@@ -577,7 +577,10 @@ function Dashboard() {
                     <th>Team ID</th>
                     <th>Topic</th>
                     <th>Status</th>
+                    <th>Model</th>
+                    <th>Duration</th>
                     <th>Entities</th>
+                    <th>Version</th>
                     <th>Created At</th>
                   </tr>
                 </thead>
@@ -597,11 +600,38 @@ function Dashboard() {
                           {team.status}
                         </Tag>
                       </td>
+                      <td className="model-cell">
+                        {team.model_name ? (
+                          <Tag minimal small>
+                            {team.model_name}
+                          </Tag>
+                        ) : '-'}
+                      </td>
+                      <td className="duration-cell">
+                        {team.duration_seconds ? (
+                          <span>{formatDuration(Math.round(team.duration_seconds))}</span>
+                        ) : '-'}
+                      </td>
                       <td className="entity-count-cell">
                         {team.status === 'completed' ? (
                           <Tag intent={Intent.SUCCESS} minimal round>
                             {getEntityCount(team)}
                           </Tag>
+                        ) : '-'}
+                      </td>
+                      <td className="version-cell">
+                        {team.git_sha && team.git_repo_url ? (
+                          <a 
+                            href={`${team.git_repo_url}/commit/${team.git_sha}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            title={team.git_sha}
+                          >
+                            <code>{team.git_sha.substring(0, 7)}</code>
+                          </a>
+                        ) : team.git_sha ? (
+                          <code title={team.git_sha}>{team.git_sha.substring(0, 7)}</code>
                         ) : '-'}
                       </td>
                       <td>{formatDate(team.created_at)}</td>

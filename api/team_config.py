@@ -282,7 +282,7 @@ class TeamConfig:
         Returns:
             Formatted prompt string
         """
-        prompt = f"Research the following topic and extract key entities (Person, Organization):\n\n"
+        prompt = f"Research the following topic and extract key entities (Person, Organization, Events, Topics):\n\n"
         prompt += f"Topic: {topic}\n\n"
         
         if goals:
@@ -294,7 +294,9 @@ class TeamConfig:
         prompt += "Please provide a comprehensive report with:\n"
         prompt += "1. Person entities with their roles, descriptions, and source URLs\n"
         prompt += "2. Organization entities with their descriptions and source URLs\n"
-        prompt += "3. Real source URLs with relevant excerpts for each entity\n"
-        prompt += "\nNote: The Search Agent will handle the formatting. Focus on finding comprehensive, accurate information.\n"
+        prompt += "3. Events entities with their descriptions, timeframe and source URLs\n"
+        prompt += "3. T opic entities with their descriptions, relationship to People, Organization or Event and their source URLs\n"
+        prompt += "4. Real source URLs with relevant excerpts for each entity\n"
+        prompt += "\nNote: The Response Generator agent will handle the formatting. Focus on finding comprehensive, accurate information.\n"
         
         return prompt

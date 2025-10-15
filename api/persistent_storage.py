@@ -42,18 +42,33 @@ class PersistentAgentTeamStore:
                     aixplain_agent_id TEXT,
                     agent_response TEXT,
                     sachstand TEXT,
-                    mece_graph TEXT
+                    mece_graph TEXT,
+                    model_id TEXT,
+                    model_name TEXT,
+                    duration_seconds REAL,
+                    git_sha TEXT,
+                    git_repo_url TEXT
                 )
             """)
             conn.commit()
             
-            # Add mece_graph column to existing tables if it doesn't exist
-            try:
-                conn.execute("ALTER TABLE teams ADD COLUMN mece_graph TEXT")
-                conn.commit()
-            except sqlite3.OperationalError:
-                # Column already exists
-                pass
+            # Add new columns to existing tables if they don't exist
+            new_columns = [
+                ("mece_graph", "TEXT"),
+                ("model_id", "TEXT"),
+                ("model_name", "TEXT"),
+                ("duration_seconds", "REAL"),
+                ("git_sha", "TEXT"),
+                ("git_repo_url", "TEXT")
+            ]
+            
+            for column_name, column_type in new_columns:
+                try:
+                    conn.execute(f"ALTER TABLE teams ADD COLUMN {column_name} {column_type}")
+                    conn.commit()
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
     
     def _serialize_datetime(self, dt: datetime) -> str:
         """Serialize datetime to ISO format string"""
@@ -79,9 +94,15 @@ class PersistentAgentTeamStore:
             "agent_response": json.loads(row[10]) if row[10] else None,
             "sachstand": json.loads(row[11]) if row[11] else None,
             "mece_graph": json.loads(row[12]) if len(row) > 12 and row[12] else None,
+            "model_id": row[13] if len(row) > 13 else None,
+            "model_name": row[14] if len(row) > 14 else None,
+            "duration_seconds": row[15] if len(row) > 15 else None,
+            "git_sha": row[16] if len(row) > 16 else None,
+            "git_repo_url": row[17] if len(row) > 17 else None,
         }
     
-    def create_team(self, topic: str, goals: list, interaction_limit: int, mece_strategy: str) -> dict:
+    def create_team(self, topic: str, goals: list, interaction_limit: int, mece_strategy: str, 
+                   model_id: str = None, model_name: str = None, git_sha: str = None, git_repo_url: str = None) -> dict:
         """Create a new agent team"""
         team_id = str(uuid4())
         now = datetime.now(timezone.utc)
@@ -99,7 +120,12 @@ class PersistentAgentTeamStore:
             "aixplain_agent_id": None,
             "agent_response": None,
             "sachstand": None,
-            "mece_graph": None
+            "mece_graph": None,
+            "model_id": model_id,
+            "model_name": model_name,
+            "duration_seconds": None,
+            "git_sha": git_sha,
+            "git_repo_url": git_repo_url
         }
         
         with sqlite3.connect(self.db_path) as conn:
@@ -107,8 +133,9 @@ class PersistentAgentTeamStore:
                 INSERT INTO teams (
                     team_id, topic, goals, status, interaction_limit, mece_strategy,
                     created_at, updated_at, execution_log, aixplain_agent_id,
-                    agent_response, sachstand, mece_graph
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    agent_response, sachstand, mece_graph, model_id, model_name,
+                    duration_seconds, git_sha, git_repo_url
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 team_id,
                 topic,
@@ -122,7 +149,12 @@ class PersistentAgentTeamStore:
                 None,
                 None,
                 None,
-                None
+                None,
+                model_id,
+                model_name,
+                None,
+                git_sha,
+                git_repo_url
             ))
             conn.commit()
         
@@ -262,13 +294,32 @@ class PersistentAgentTeamStore:
             return [self._team_to_dict(row) for row in rows]
     
     def update_team_status(self, team_id: str, status: str) -> bool:
-        """Update team status"""
+        """Update team status and calculate duration if completing"""
+        team = self.get_team(team_id)
+        if not team:
+            return False
+        
+        now = datetime.now(timezone.utc)
+        duration_seconds = None
+        
+        # Calculate duration when completing
+        if status in ['completed', 'failed'] and team.get('duration_seconds') is None:
+            created_at = team['created_at']
+            duration_seconds = (now - created_at).total_seconds()
+        
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("""
-                UPDATE teams 
-                SET status = ?, updated_at = ?
-                WHERE team_id = ?
-            """, (status, self._serialize_datetime(datetime.now(timezone.utc)), team_id))
+            if duration_seconds is not None:
+                cursor = conn.execute("""
+                    UPDATE teams 
+                    SET status = ?, updated_at = ?, duration_seconds = ?
+                    WHERE team_id = ?
+                """, (status, self._serialize_datetime(now), duration_seconds, team_id))
+            else:
+                cursor = conn.execute("""
+                    UPDATE teams 
+                    SET status = ?, updated_at = ?
+                    WHERE team_id = ?
+                """, (status, self._serialize_datetime(now), team_id))
             conn.commit()
             return cursor.rowcount > 0
     

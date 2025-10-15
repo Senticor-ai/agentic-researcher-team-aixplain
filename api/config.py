@@ -13,7 +13,11 @@ class Config:
     # All agents use GPT-4o for best quality and compatibility with aixplain TeamAgent
     
     # Available Models
-    GPT_4O = "6646261c6eb563165658bbb1"  # GPT-4o - Best quality, proven to work
+    GPT_4O = "6646261c6eb563165658bbb1"  # GPT-4o - Current model
+    QWEN3_235B = "6810d040a289e15e3e5dd141"  # Qwen3 235B
+    GEMINI_2_FLASH_EXP = "6759db476eb56303857a07c1"  # Gemini 2.0 Flash (Exp)
+    GPT_OSS_120B = "6895f768d50c89537c1cf24e"  # GPT OSS 120b - Open source model
+    GPT_5_MINI = "6895d6d1d50c89537c1cf237"  # GPT-5 Mini - Latest model
     
     # Agent-Specific Model Configuration
     SEARCH_AGENT_MODEL = GPT_4O  # Search Agent: entity extraction, needs strong reasoning
@@ -24,6 +28,19 @@ class Config:
     DEFAULT_MODEL = "gpt4o"
     MODELS: Dict[str, str] = {
         "gpt4o": GPT_4O,
+        "qwen3235b": QWEN3_235B,
+        "gemini2flash": GEMINI_2_FLASH_EXP,
+        "gptoss120b": GPT_OSS_120B,
+        "gpt5mini": GPT_5_MINI,
+    }
+    
+    # Model ID to display name mapping
+    MODEL_NAMES: Dict[str, str] = {
+        QWEN3_235B: "Qwen3 235B",
+        GEMINI_2_FLASH_EXP: "Gemini 2.0 Flash (Exp)",
+        GPT_OSS_120B: "GPT OSS 120b",
+        GPT_5_MINI: "GPT-5 Mini",
+        GPT_4O: "GPT-4o",
     }
     
     # Tool IDs from aixplain marketplace
@@ -80,3 +97,18 @@ class Config:
             KeyError: If tool name not found
         """
         return cls.TOOL_IDS[tool_name]
+    
+    @classmethod
+    def get_model_name(cls, model_id: str = None) -> str:
+        """
+        Get human-readable model name from model ID
+        
+        Args:
+            model_id: Model ID, defaults to TEAM_AGENT_MODEL if None
+            
+        Returns:
+            Human-readable model name
+        """
+        if model_id is None:
+            model_id = cls.TEAM_AGENT_MODEL
+        return cls.MODEL_NAMES.get(model_id, f"Unknown Model ({model_id})")

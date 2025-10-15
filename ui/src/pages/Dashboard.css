@@ -213,6 +213,40 @@
   text-align: center;
 }
 
+.model-cell {
+  text-align: center;
+}
+
+.duration-cell {
+  text-align: center;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  color: #5c7080;
+}
+
+.version-cell {
+  text-align: center;
+}
+
+.version-cell a {
+  color: #137cbd;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.version-cell a:hover {
+  color: #106ba3;
+  text-decoration: underline;
+}
+
+.version-cell code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85rem;
+  background-color: #f5f8fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .dashboard {
