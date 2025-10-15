@@ -2,10 +2,13 @@
 Unit test to verify Task 5 enhancements to Mentalist instructions
 Tests the instruction content without requiring a running API server
 """
+import pytest
 import sys
 sys.path.insert(0, 'api')
 
 from instructions.mentalist import get_mentalist_instructions
+
+pytestmark = pytest.mark.unit
 
 def test_multi_round_search_strategy():
     """Test that multi-round search strategy is present"""

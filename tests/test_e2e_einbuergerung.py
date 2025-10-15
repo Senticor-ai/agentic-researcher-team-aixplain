@@ -13,16 +13,17 @@ import time
 import json
 from datetime import datetime
 
+from tests.config import API_BASE_URL, SLOW_TEST_TIMEOUT
+
+pytestmark = [pytest.mark.e2e, pytest.mark.slow]
 
 # Test configuration
-API_BASE_URL = "http://localhost:8080"
 TOPIC = "Einbürgerungstests in Baden-Württemberg"
 GOALS = ["Find stakeholders and programs", "Identify key organizations and officials"]
 INTERACTION_LIMIT = 50
-MAX_WAIT_TIME = 300  # 5 minutes
+MAX_WAIT_TIME = SLOW_TEST_TIMEOUT  # 5 minutes default
 
 
-@pytest.mark.integration
 @pytest.mark.skipif(True, reason="Run manually with: pytest tests/test_e2e_einbuergerung.py -v -s")
 def test_einbuergerung_e2e():
     """

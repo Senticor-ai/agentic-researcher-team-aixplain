@@ -12,6 +12,8 @@ import logging
 from api.team_config import TeamConfig
 from api.entity_processor import EntityProcessor
 
+pytestmark = pytest.mark.integration
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -22,9 +24,10 @@ class TestWikipediaIntegration:
     def test_wikipedia_agent_creation(self):
         """Test that Wikipedia agent can be created"""
         # Note: This will only work if Wikipedia tool ID is configured
-        wikipedia_agent = TeamConfig.create_wikipedia_agent(model="testing")
+        from api.config import Config
+        wikipedia_agent = TeamConfig.create_wikipedia_agent()
         
-        if TeamConfig.TOOL_IDS["wikipedia"] is None:
+        if Config.TOOL_IDS.get("wikipedia") is None:
             # Wikipedia tool not configured - agent should be None
             assert wikipedia_agent is None
             logger.info("Wikipedia tool not configured - skipping agent creation test")
@@ -43,7 +46,6 @@ class TestWikipediaIntegration:
         team = TeamConfig.create_team(
             topic=topic,
             goals=goals,
-            model="testing",
             enable_wikipedia=True
         )
         
@@ -60,7 +62,6 @@ class TestWikipediaIntegration:
         team = TeamConfig.create_team(
             topic=topic,
             goals=goals,
-            model="testing",
             enable_wikipedia=False
         )
         
@@ -230,7 +231,6 @@ class TestWikipediaIntegration:
         team = TeamConfig.create_team(
             topic=topic,
             goals=goals,
-            model="testing",
             enable_wikipedia=True
         )
         

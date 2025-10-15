@@ -7,15 +7,18 @@ import requests
 import time
 from datetime import datetime
 
+from tests.config import API_BASE_URL, API_V1_BASE
 
-BASE_URL = "http://localhost:8000"
-API_BASE = f"{BASE_URL}/api/v1"
+pytestmark = [pytest.mark.e2e, pytest.mark.slow]
+
+BASE_URL = API_BASE_URL
+API_BASE = API_V1_BASE
 
 
 class TestE2EIntegration:
     """End-to-end integration tests"""
     
-    def test_health_check(self):
+    def test_e2e_health_check(self):
         """Test health check endpoint"""
         response = requests.get(f"{BASE_URL}/api/v1/health")
         assert response.status_code == 200
@@ -23,7 +26,7 @@ class TestE2EIntegration:
         assert data["status"] == "healthy"
         assert "version" in data
     
-    def test_cors_headers(self):
+    def test_e2e_cors_headers(self):
         """Test CORS headers are present for UI"""
         response = requests.options(
             f"{API_BASE}/agent-teams",
@@ -35,7 +38,7 @@ class TestE2EIntegration:
         # Should not be blocked
         assert response.status_code in [200, 204]
     
-    def test_create_and_list_teams(self):
+    def test_e2e_create_and_list_teams(self):
         """Test creating a team and listing it"""
         # Create a team
         create_payload = {
@@ -70,7 +73,7 @@ class TestE2EIntegration:
         assert our_team["topic"] == "E2E Test Topic"
         assert our_team["status"] in ["initializing", "running", "completed", "failed"]
     
-    def test_get_team_detail(self):
+    def test_e2e_get_team_detail(self):
         """Test getting team details"""
         # Create a team first
         create_payload = {
@@ -98,7 +101,7 @@ class TestE2EIntegration:
         assert "created_at" in team_detail
         assert "updated_at" in team_detail
     
-    def test_team_execution_flow(self):
+    def test_e2e_team_execution_flow(self):
         """Test the full team execution flow"""
         # Create a team
         create_payload = {
@@ -126,13 +129,13 @@ class TestE2EIntegration:
         # Status should be pending, initializing, running, completed, or failed
         assert team_detail["status"] in ["pending", "initializing", "running", "completed", "failed"]
     
-    def test_invalid_team_id(self):
+    def test_e2e_invalid_team_id(self):
         """Test getting non-existent team returns 404"""
         response = requests.get(f"{API_BASE}/agent-teams/nonexistent-id")
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
     
-    def test_create_team_validation(self):
+    def test_e2e_create_team_validation(self):
         """Test team creation with invalid data"""
         # Missing required topic field
         invalid_payload = {
@@ -145,7 +148,7 @@ class TestE2EIntegration:
         )
         assert response.status_code == 422  # Validation error
     
-    def test_ui_data_format(self):
+    def test_e2e_ui_data_format(self):
         """Test that API returns data in format expected by UI"""
         # Create a team
         create_payload = {

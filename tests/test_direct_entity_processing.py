@@ -1,7 +1,10 @@
 """
 Test entity processing directly
 """
+import pytest
 from api.entity_processor import EntityProcessor
+
+pytestmark = pytest.mark.unit
 
 # Simulate agent response with intermediate steps
 agent_response = {

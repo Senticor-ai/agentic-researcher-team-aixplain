@@ -4,6 +4,7 @@ Unit tests for search strategy module
 Tests the search strategy logic without requiring API server.
 Run with: python tests/test_search_strategy_unit.py
 """
+import pytest
 import sys
 from pathlib import Path
 
@@ -16,6 +17,8 @@ from api.search_strategy import (
     generate_feedback,
     enhance_instructions
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_analyze_topic():

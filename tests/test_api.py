@@ -12,7 +12,10 @@ from api.main import app
 from api.storage import get_store
 
 # V1 tests - skipping as we've moved to V2 team agent architecture
-pytestmark = pytest.mark.skip(reason="V1 API tests deprecated - see test_api_integration.py for V2")
+pytestmark = [
+    pytest.mark.unit,
+    pytest.mark.skip(reason="V1 API tests deprecated - see test_api_integration.py for V2")
+]
 
 
 @pytest.fixture(autouse=True)

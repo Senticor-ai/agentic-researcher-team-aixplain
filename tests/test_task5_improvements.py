@@ -3,13 +3,18 @@ Test to verify Task 5 improvements to Mentalist instructions
 This test runs a research query and checks if the enhanced instructions
 lead to better entity extraction results.
 """
+import pytest
 import requests
 import json
 import time
 
-API_BASE = "http://localhost:8080/api/v1"
+from tests.config import API_V1_BASE
 
-def test_enhanced_mentalist_instructions():
+pytestmark = [pytest.mark.e2e, pytest.mark.slow]
+
+API_BASE = API_V1_BASE
+
+def test_e2e_enhanced_mentalist_instructions():
     """
     Test that enhanced Mentalist instructions lead to:
     1. More diverse entity types (not just Person/Organization)
@@ -235,5 +240,5 @@ def test_enhanced_mentalist_instructions():
     return success
 
 if __name__ == "__main__":
-    success = test_enhanced_mentalist_instructions()
+    success = test_e2e_enhanced_mentalist_instructions()
     exit(0 if success else 1)

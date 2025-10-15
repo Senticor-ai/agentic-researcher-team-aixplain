@@ -23,12 +23,14 @@ from aixplain.factories import ToolFactory
 class TestGoogleSearchIntegration:
     """Test suite for Google Search integration"""
     
+    @pytest.mark.unit
     def test_google_search_tool_configured(self):
         """Test that Google Search tool ID is configured"""
         assert "google_search" in Config.TOOL_IDS
         assert Config.TOOL_IDS["google_search"] == "65c51c556eb563350f6e1bb1"
     
     @pytest.mark.integration
+    @pytest.mark.skipif(not os.getenv("TEAM_API_KEY"), reason="Requires TEAM_API_KEY for real API access")
     def test_google_search_tool_accessible(self):
         """Test that Google Search tool can be retrieved from aixplain (requires real API)"""
         try:
@@ -40,6 +42,7 @@ class TestGoogleSearchIntegration:
             pytest.fail(f"Failed to retrieve Google Search tool: {e}")
     
     @pytest.mark.integration
+    @pytest.mark.skipif(not os.getenv("TEAM_API_KEY"), reason="Requires TEAM_API_KEY for real API access")
     def test_get_tools_includes_google_search(self):
         """Test that get_tools() includes Google Search by default (requires real API)"""
         tools = TeamConfig.get_tools(include_google_search=True)
@@ -54,6 +57,7 @@ class TestGoogleSearchIntegration:
         print(f"✓ Retrieved {len(tools)} tools including Google Search")
     
     @pytest.mark.integration
+    @pytest.mark.skipif(not os.getenv("TEAM_API_KEY"), reason="Requires TEAM_API_KEY for real API access")
     def test_get_tools_without_google_search(self):
         """Test that get_tools() can exclude Google Search (requires real API)"""
         tools = TeamConfig.get_tools(include_google_search=False)
@@ -70,7 +74,7 @@ class TestGoogleSearchIntegration:
         topic = "Jugendschutz Baden-Württemberg 2025"
         
         try:
-            search_agent = TeamConfig.create_search_agent(topic, model="testing")
+            search_agent = TeamConfig.create_search_agent(topic)
             assert search_agent is not None
             
             # Check that agent has tools configured
@@ -99,7 +103,6 @@ class TestGoogleSearchIntegration:
             team = TeamConfig.create_team(
                 topic=topic,
                 goals=goals,
-                model="testing",
                 enable_wikipedia=False  # Disable Wikipedia to focus on search tools
             )
             
@@ -187,7 +190,6 @@ class TestGoogleSearchIntegration:
         try:
             team = TeamConfig.create_team(
                 topic=topic,
-                model="testing",
                 enable_wikipedia=False
             )
             
@@ -202,6 +204,7 @@ class TestGoogleSearchIntegration:
         
         print(f"\n{'='*80}\n")
     
+    @pytest.mark.unit
     def test_search_agent_instructions_mention_google(self):
         """Test that Search Agent instructions mention Google Search as fallback"""
         from api.instructions.search_agent import get_search_agent_instructions

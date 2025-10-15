@@ -15,6 +15,8 @@ from api.config import Config
 from api.instructions.search_agent import get_search_agent_instructions
 from api.instructions.mentalist import get_mentalist_instructions
 
+pytestmark = pytest.mark.unit
+
 
 class TestSearchAgentModelDefault:
     """Test that Search Agent defaults to GPT-4o (production model)"""

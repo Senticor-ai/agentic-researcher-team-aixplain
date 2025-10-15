@@ -8,13 +8,18 @@ This script tests the enhanced extraction with new entity types:
 
 Compares results with previous runs to show improvements.
 """
+import pytest
 import requests
 import json
 import time
 import sys
 from datetime import datetime
 
-API_BASE = "http://localhost:8000/api/v1"
+from tests.config import API_V1_BASE
+
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
+
+API_BASE = API_V1_BASE
 
 # Test cases from previous runs
 TEST_CASES = [

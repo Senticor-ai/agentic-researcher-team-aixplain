@@ -8,12 +8,17 @@ This script tests the refined prompts with topics that previously failed:
 
 Run with: python tests/test_improved_prompts.py
 """
+import pytest
 import requests
 import json
 import time
 import sys
 
-API_BASE = "http://localhost:8000/api/v1"
+from tests.config import API_V1_BASE
+
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
+
+API_BASE = API_V1_BASE
 
 # Test cases with expected improvements
 TEST_CASES = [

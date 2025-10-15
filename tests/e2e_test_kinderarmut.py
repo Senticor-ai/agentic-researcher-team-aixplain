@@ -24,10 +24,11 @@ import requests
 # Load environment variables
 load_dotenv()
 
+# Import test configuration
+from tests.config import API_BASE_URL, POLL_INTERVAL, DEFAULT_TIMEOUT
+
 # Configuration
-API_BASE_URL = "http://localhost:8000"
-POLL_INTERVAL = 5  # seconds
-MAX_WAIT_TIME = 120  # seconds
+MAX_WAIT_TIME = DEFAULT_TIMEOUT  # seconds
 
 
 def check_api_key():

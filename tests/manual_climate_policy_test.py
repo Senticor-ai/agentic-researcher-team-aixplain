@@ -4,8 +4,14 @@ Quick test with a well-documented English topic
 import requests
 import json
 import time
+import sys
+from pathlib import Path
 
-API_BASE = "http://localhost:8000/api/v1"
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from tests.config import API_V1_BASE
+
+API_BASE = API_V1_BASE
 
 print("=== Testing: Climate Policy EU 2024 ===\n")
 

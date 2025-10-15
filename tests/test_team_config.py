@@ -6,6 +6,8 @@ from unittest.mock import Mock, patch, MagicMock
 from api.team_config import TeamConfig
 from api.config import Config
 
+pytestmark = pytest.mark.unit
+
 
 def test_get_tools():
     """Test tool retrieval"""

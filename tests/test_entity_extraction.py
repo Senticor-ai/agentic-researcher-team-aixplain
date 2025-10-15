@@ -6,13 +6,18 @@ This test verifies that:
 2. Entities have proper structure with sources
 3. JSON-LD Sachstand is generated correctly
 """
+import pytest
 import json
 import time
 from pathlib import Path
 import requests
 
+from tests.config import API_V1_BASE
+
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
+
 # API base URL
-API_BASE = "http://localhost:8000/api/v1"
+API_BASE = API_V1_BASE
 
 
 def test_simple_topic_paris():
@@ -181,8 +186,9 @@ def test_complex_topic_jugendschutz():
 
 if __name__ == "__main__":
     # Run tests manually
+    from tests.config import API_BASE_URL
     print("Starting entity extraction tests...")
-    print("Make sure the API is running on http://localhost:8000")
+    print(f"Make sure the API is running on {API_BASE_URL}")
     
     try:
         # Check API health

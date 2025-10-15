@@ -3,9 +3,15 @@ Quick verification that entities are being extracted
 """
 import requests
 import json
+import sys
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from tests.config import API_V1_BASE
 
 # Get the latest team
-response = requests.get("http://localhost:8000/api/v1/agent-teams")
+response = requests.get(f"{API_V1_BASE}/agent-teams")
 teams = response.json()
 
 if not teams:
@@ -21,7 +27,7 @@ print(f"Topic: {latest_team['topic']}")
 print(f"Status: {latest_team['status']}")
 
 # Get full details
-response = requests.get(f"http://localhost:8000/api/v1/agent-teams/{team_id}")
+response = requests.get(f"{API_V1_BASE}/agent-teams/{team_id}")
 team_data = response.json()
 
 # Check intermediate steps for Search Agent output

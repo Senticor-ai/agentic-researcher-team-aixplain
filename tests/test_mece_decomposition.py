@@ -20,6 +20,8 @@ from api.team_config import TeamConfig
 from api.entity_processor import EntityProcessor
 from api.persistent_storage import PersistentAgentTeamStore
 
+pytestmark = pytest.mark.unit
+
 logger = logging.getLogger(__name__)
 
 
@@ -470,8 +472,7 @@ class TestMECEDecomposition:
             # Create team
             team = TeamConfig.create_team(
                 topic=topic,
-                goals=["Identify stakeholders", "Map policy areas", "Timeline of changes"],
-                model="testing"
+                goals=["Identify stakeholders", "Map policy areas", "Timeline of changes"]
             )
             
             # Verify team was created
@@ -595,11 +596,21 @@ class TestMECEDecomposition:
         
         # Process the response
         topic = "Integration policies Baden-Württemberg"
-        sachstand, mece_graph = EntityProcessor.process_agent_response(
+        # API now returns (sachstand, mece_graph, metrics) tuple
+        result = EntityProcessor.process_agent_response(
             agent_response=mock_agent_response,
             topic=topic,
             completion_status="partial"
         )
+        
+        # Unpack based on what's returned
+        if isinstance(result, tuple) and len(result) == 3:
+            sachstand, mece_graph, metrics = result
+        elif isinstance(result, tuple) and len(result) == 2:
+            sachstand, mece_graph = result
+        else:
+            sachstand = result
+            mece_graph = None
         
         # Verify Sachstand was generated
         assert sachstand is not None

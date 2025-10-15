@@ -82,14 +82,13 @@ class TestEnhancedInstructions:
         """Test that feedback mechanism is present"""
         instructions = get_search_agent_instructions("Test Topic")
         
-        assert "EXTRACTION SUMMARY:" in instructions, "Extraction summary section missing"
-        assert "Total entities extracted: [number]" in instructions, "Total entities count missing"
-        assert "By type: Person: [X], Organization: [X], Topic: [X], Event: [X], Policy: [X]" in instructions, "Entity counts by type missing"
-        assert "Search results processed: [number]" in instructions, "Search results processed missing"
-        assert "Average entities per result: [number]" in instructions, "Average entities per result missing"
-        assert "Coverage assessment: [Brief assessment" in instructions, "Coverage assessment missing"
-        assert "Gaps identified: [List any entity types" in instructions, "Gaps identified missing"
-        assert "Example:" in instructions and "Total entities extracted: 12" in instructions, "Example summary missing"
+        # Phase 1 simplified the feedback mechanism - Search Agent no longer compiles reports
+        # Now uses simplified "SEARCH EFFECTIVENESS NOTES" instead of detailed "EXTRACTION SUMMARY"
+        assert "SEARCH EFFECTIVENESS NOTES:" in instructions, "Search effectiveness notes section missing"
+        assert "Keep notes brief" in instructions, "Brief notes instruction missing"
+        
+        # Still requires extraction summary with entity counts
+        assert "extraction summary with entity counts by type" in instructions.lower(), "Entity count requirement missing"
 
     def test_instruction_length(self):
         """Test that instructions are comprehensive"""

@@ -8,7 +8,10 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 
 # V1 tests - skipping as we've moved to V2 team agent architecture
-pytestmark = pytest.mark.skip(reason="V1 single agent tests deprecated - see test_team_config.py for V2")
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skip(reason="V1 single agent tests deprecated - see test_team_config.py for V2")
+]
 
 
 def test_walking_skeleton_config():

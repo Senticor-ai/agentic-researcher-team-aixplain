@@ -24,6 +24,8 @@ if not os.getenv("TEAM_API_KEY"):
 from api.team_config import TeamConfig
 from api.entity_processor import EntityProcessor
 
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -33,16 +35,18 @@ class TestWikipediaIntegrationReal:
     
     def test_wikipedia_tool_configured(self):
         """Test that Wikipedia tool ID is configured"""
-        wikipedia_tool_id = TeamConfig.TOOL_IDS.get("wikipedia")
+        from api.config import Config
+        wikipedia_tool_id = Config.TOOL_IDS.get("wikipedia")
         
         assert wikipedia_tool_id is not None, "Wikipedia tool ID not configured"
         assert wikipedia_tool_id == "6633fd59821ee31dd914e232", "Wikipedia tool ID mismatch"
         
         logger.info(f"✓ Wikipedia tool ID configured: {wikipedia_tool_id}")
     
+    @pytest.mark.skipif(not os.getenv("TEAM_API_KEY"), reason="Requires TEAM_API_KEY for real API access")
     def test_wikipedia_agent_creation(self):
         """Test that Wikipedia agent can be created with real tool"""
-        wikipedia_agent = TeamConfig.create_wikipedia_agent(model="testing")
+        wikipedia_agent = TeamConfig.create_wikipedia_agent()
         
         assert wikipedia_agent is not None, "Wikipedia agent should be created"
         assert wikipedia_agent.name == "Wikipedia Agent"
@@ -59,7 +63,6 @@ class TestWikipediaIntegrationReal:
         team = TeamConfig.create_team(
             topic=topic,
             goals=goals,
-            model="testing",
             enable_wikipedia=True
         )
         
@@ -69,6 +72,7 @@ class TestWikipediaIntegrationReal:
         logger.info(f"✓ Team created with Wikipedia agent: {team.name}")
         logger.info(f"  Team ID: {team.id}")
     
+    @pytest.mark.skipif(not os.getenv("TEAM_API_KEY"), reason="Requires TEAM_API_KEY for real API access")
     def test_wikipedia_tool_access(self):
         """Test that Wikipedia tool can be retrieved and has correct properties"""
         from aixplain.factories import ToolFactory
@@ -129,7 +133,6 @@ class TestWikipediaIntegrationReal:
         team = TeamConfig.create_team(
             topic=topic,
             goals=goals,
-            model="testing",
             enable_wikipedia=True
         )
         
