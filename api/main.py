@@ -395,10 +395,36 @@ async def create_agent_team(request: CreateAgentTeamRequest, background_tasks: B
 
 
 @app.get("/api/v1/agent-teams", response_model=list[AgentTeamSummary])
-async def list_agent_teams():
-    """List all agent teams (sorted by created_at descending - newest first)"""
+async def list_agent_teams(
+    topic: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 10,
+    offset: int = 0
+):
+    """
+    List agent teams with optional filtering and pagination
+    
+    Args:
+        topic: Filter by topic substring (case-insensitive)
+        status: Filter by status (pending, running, completed, failed)
+        limit: Maximum number of results (default: 10, max: 100)
+        offset: Number of results to skip for pagination (default: 0)
+    
+    Returns:
+        List of agent team summaries sorted by created_at descending (newest first)
+    """
     store = get_store()
-    teams = store.get_all_teams()  # Already sorted by created_at DESC
+    
+    # Enforce maximum limit
+    limit = min(limit, 100)
+    
+    # Get filtered teams
+    teams = store.get_teams_filtered(
+        topic=topic,
+        status=status,
+        limit=limit,
+        offset=offset
+    )
     
     return [
         AgentTeamSummary(

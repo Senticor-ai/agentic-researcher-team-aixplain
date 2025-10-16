@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "osint-agent-teams": {
+      "command": "python",
+      "args": ["-m", "mcp_server.main"],
+      "cwd": "/absolute/path/to/agentic-researcher-team-aixplain/mcp_server",
+      "env": {
+        "FASTAPI_BASE_URL": "http://localhost:8000",
+        "HTTP_TIMEOUT": "30.0",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

@@ -293,6 +293,47 @@ class PersistentAgentTeamStore:
             rows = cursor.fetchall()
             return [self._team_to_dict(row) for row in rows]
     
+    def get_teams_filtered(
+        self, 
+        topic: Optional[str] = None,
+        status: Optional[str] = None,
+        limit: int = 10,
+        offset: int = 0
+    ) -> List[dict]:
+        """
+        Get teams with optional filtering and pagination
+        
+        Args:
+            topic: Filter by topic substring (case-insensitive)
+            status: Filter by exact status match
+            limit: Maximum number of results to return
+            offset: Number of results to skip (for pagination)
+        
+        Returns:
+            List of team dictionaries matching the filters
+        """
+        query = "SELECT * FROM teams WHERE 1=1"
+        params = []
+        
+        # Add topic filter (case-insensitive substring match)
+        if topic:
+            query += " AND LOWER(topic) LIKE LOWER(?)"
+            params.append(f"%{topic}%")
+        
+        # Add status filter (exact match)
+        if status:
+            query += " AND status = ?"
+            params.append(status)
+        
+        # Add ordering and pagination
+        query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute(query, params)
+            rows = cursor.fetchall()
+            return [self._team_to_dict(row) for row in rows]
+    
     def update_team_status(self, team_id: str, status: str) -> bool:
         """Update team status and calculate duration if completing"""
         team = self.get_team(team_id)

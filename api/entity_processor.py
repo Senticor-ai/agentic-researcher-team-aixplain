@@ -268,16 +268,24 @@ class EntityProcessor:
                                     )
                                     return entities_with_wiki
                                 
-                                # Check if entities are grouped by type (e.g., "Person Entities", "Organization Entities")
-                                elif isinstance(parsed, dict) and any(key.endswith(" Entities") for key in parsed.keys()):
-                                    logger.info("Found grouped entity format, converting to standard format")
-                                    converted = EntityProcessor.convert_grouped_entities(parsed)
-                                    logger.info(f"Converted {len(converted['entities'])} entities from grouped format")
-                                    # Merge Wikipedia data
-                                    entities_with_wiki = EntityProcessor.merge_wikipedia_data(
-                                        converted, wikipedia_data
+                                # Check if entities are grouped by type
+                                # Format 1: "Person Entities", "Organization Entities", etc.
+                                # Format 2: "Person", "Organization", "Event", "Topic", "Policy" (Response Generator format)
+                                elif isinstance(parsed, dict):
+                                    entity_type_keys = ["Person", "Organization", "Event", "Topic", "Policy"]
+                                    has_grouped_format = (
+                                        any(key.endswith(" Entities") for key in parsed.keys()) or
+                                        any(key in entity_type_keys for key in parsed.keys())
                                     )
-                                    return entities_with_wiki
+                                    if has_grouped_format:
+                                        logger.info("Found grouped entity format, converting to standard format")
+                                        converted = EntityProcessor.convert_grouped_entities(parsed)
+                                        logger.info(f"Converted {len(converted['entities'])} entities from grouped format")
+                                        # Merge Wikipedia data
+                                        entities_with_wiki = EntityProcessor.merge_wikipedia_data(
+                                            converted, wikipedia_data
+                                        )
+                                        return entities_with_wiki
                                     
                             except json.JSONDecodeError:
                                 logger.info("Search Agent output is not valid JSON, trying ast.literal_eval")
@@ -424,8 +432,16 @@ class EntityProcessor:
                 logger.warning("Agent output missing 'entities' field")
                 logger.warning(f"Available fields: {list(entities_data.keys())}")
                 
-                # Check if entities are grouped by type (e.g., "Person Entities", "Organization Entities")
-                if any(key.endswith(" Entities") for key in entities_data.keys()):
+                # Check if entities are grouped by type
+                # Format 1: "Person Entities", "Organization Entities", etc.
+                # Format 2: "Person", "Organization", "Event", "Topic", "Policy" (Response Generator format)
+                entity_type_keys = ["Person", "Organization", "Event", "Topic", "Policy"]
+                has_grouped_format = (
+                    any(key.endswith(" Entities") for key in entities_data.keys()) or
+                    any(key in entity_type_keys for key in entities_data.keys())
+                )
+                
+                if has_grouped_format:
                     logger.info("Found grouped entity format in output, converting to standard format")
                     entities_data = EntityProcessor.convert_grouped_entities(entities_data)
                     logger.info(f"Converted {len(entities_data['entities'])} entities from grouped format")
@@ -704,7 +720,13 @@ class EntityProcessor:
             "Organization Entities": "Organization",
             "Event Entities": "Event",
             "Topic Entities": "Topic",
-            "Policy Entities": "Policy"
+            "Policy Entities": "Policy",
+            # Also support format without "Entities" suffix (Response Generator format)
+            "Person": "Person",
+            "Organization": "Organization",
+            "Event": "Event",
+            "Topic": "Topic",
+            "Policy": "Policy"
         }
         
         for group_name, entity_list in grouped_data.items():
