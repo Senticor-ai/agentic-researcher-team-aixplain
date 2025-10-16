@@ -6,6 +6,7 @@ spawning agent teams and retrieving historical execution data.
 The server is completely stateless - all state is managed by the FastAPI backend.
 """
 
+import json
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -173,7 +174,7 @@ class LibreChatMCPServer:
                     )
                 
                 logger.debug(f"Tool {name} completed successfully")
-                return [TextContent(type="text", text=str(result))]
+                return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
                 
             except Exception as e:
                 logger.error(f"Error handling tool {name}: {e}", exc_info=True)
@@ -181,7 +182,7 @@ class LibreChatMCPServer:
                     "TOOL_EXECUTION_ERROR",
                     f"Error executing tool {name}: {str(e)}"
                 )
-                return [TextContent(type="text", text=str(error_response))]
+                return [TextContent(type="text", text=json.dumps(error_response, ensure_ascii=False))]
     
     async def spawn_agent_team(
         self,

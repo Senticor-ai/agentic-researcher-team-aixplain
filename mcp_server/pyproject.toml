@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "MCP server for LibreChat integration with OSINT agent teams"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
-packages = [{include = "mcp_server"}]
+packages = [{include = "mcp_server", from = ".."}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

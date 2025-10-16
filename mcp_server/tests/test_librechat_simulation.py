@@ -431,6 +431,49 @@ class TestLibreChatJSONLDRendering:
         json_str = json.dumps(list_response)
         parsed = json.loads(json_str)
         assert parsed == list_response
+    
+    @pytest.mark.asyncio
+    async def test_text_content_returns_valid_json(self, mcp_server: LibreChatMCPServer):
+        """Test that responses with Unicode can be serialized as valid JSON.
+        
+        This is critical for LibreChat agents to parse responses correctly.
+        The output must be valid JSON with Unicode preserved (ensure_ascii=False).
+        """
+        # Test spawn_agent_team with Unicode topic
+        spawn_response = await mcp_server.spawn_agent_team(
+            topic="Test Topic with Unicode: Kinderarmut in Deutschland"
+        )
+        
+        # Serialize to JSON (this is what happens in call_tool handler)
+        json_str = json.dumps(spawn_response, ensure_ascii=False)
+        
+        # Verify it's valid JSON that can be parsed
+        parsed = json.loads(json_str)
+        assert isinstance(parsed, dict)
+        assert "@context" in parsed
+        assert "@type" in parsed
+        
+        # Verify Unicode is preserved (not escaped)
+        assert "Kinderarmut" in json_str
+        assert "Deutschland" in json_str
+        
+        # Verify no single quotes (Python dict string representation)
+        # Valid JSON uses double quotes only
+        assert "{'@context'" not in json_str
+        assert '{"@context"' in json_str
+        
+        # Test error response is also valid JSON
+        error_response = await mcp_server.spawn_agent_team(topic="")
+        json_str = json.dumps(error_response, ensure_ascii=False)
+        parsed = json.loads(json_str)
+        assert isinstance(parsed, dict)
+        assert parsed.get("@type") == "FailureReport"
+        
+        # Test list response with potential Unicode
+        list_response = await mcp_server.list_executions()
+        json_str = json.dumps(list_response, ensure_ascii=False)
+        parsed = json.loads(json_str)
+        assert isinstance(parsed, dict)
 
 
 if __name__ == "__main__":

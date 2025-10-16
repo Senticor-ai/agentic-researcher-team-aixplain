@@ -762,3 +762,91 @@ class TestParameterValidation:
         for status in ["pending", "running", "completed", "failed"]:
             result = await server.list_executions(status_filter=status)
             assert result["@type"] == "ItemList"
+
+
+
+class TestJSONSerialization:
+    """Tests for JSON serialization of responses (LibreChat compatibility)."""
+    
+    @pytest.mark.asyncio
+    async def test_responses_serialize_to_valid_json(self, server, mock_fastapi_client):
+        """Test that all responses can be serialized to valid JSON with json.dumps().
+        
+        This is critical for LibreChat agents - responses must be valid JSON
+        (double quotes), not Python dict strings (single quotes).
+        """
+        import json
+        
+        # Test spawn_agent_team response
+        mock_fastapi_client.create_team.return_value = {
+            "team_id": "test-123",
+            "status": "pending",
+            "created_at": "2025-10-16T10:00:00Z"
+        }
+        
+        spawn_response = await server.spawn_agent_team(
+            topic="Test with Unicode: Kinderarmut in Deutschland"
+        )
+        
+        # Serialize with json.dumps (as done in call_tool handler)
+        json_str = json.dumps(spawn_response, ensure_ascii=False)
+        
+        # Verify it's valid JSON
+        parsed = json.loads(json_str)
+        assert isinstance(parsed, dict)
+        assert parsed["@context"] == "https://schema.org"
+        
+        # Verify Unicode is preserved (ensure_ascii=False)
+        assert "Kinderarmut" in json_str
+        assert "Deutschland" in json_str
+        
+        # Verify it uses double quotes (valid JSON), not single quotes (Python dict)
+        assert '{"@context"' in json_str
+        assert "{'@context'" not in json_str
+    
+    @pytest.mark.asyncio
+    async def test_error_responses_serialize_to_valid_json(self, server):
+        """Test that error responses are also valid JSON."""
+        import json
+        
+        # Test error response (empty topic)
+        error_response = await server.spawn_agent_team(topic="")
+        
+        # Serialize with json.dumps
+        json_str = json.dumps(error_response, ensure_ascii=False)
+        
+        # Verify it's valid JSON
+        parsed = json.loads(json_str)
+        assert isinstance(parsed, dict)
+        assert parsed["@type"] == "ErrorResponse"
+        
+        # Verify it uses double quotes
+        assert '{"@context"' in json_str
+    
+    @pytest.mark.asyncio
+    async def test_list_response_serializes_to_valid_json(self, server, mock_fastapi_client):
+        """Test that list responses with Unicode topics serialize correctly."""
+        import json
+        
+        mock_fastapi_client.list_teams.return_value = [
+            {
+                "team_id": "team-1",
+                "topic": "Kinderarmut in Deutschland",
+                "status": "completed",
+                "created_at": "2025-10-16T10:00:00Z"
+            }
+        ]
+        
+        list_response = await server.list_executions()
+        
+        # Serialize with json.dumps
+        json_str = json.dumps(list_response, ensure_ascii=False)
+        
+        # Verify it's valid JSON
+        parsed = json.loads(json_str)
+        assert isinstance(parsed, dict)
+        assert parsed["@type"] == "ItemList"
+        
+        # Verify Unicode is preserved
+        assert "Kinderarmut" in json_str
+        assert "Deutschland" in json_str

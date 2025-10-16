@@ -22,7 +22,7 @@ async def main():
     """Spawn an agent team for a sample topic."""
     # Initialize the FastAPI client
     # Change this URL if your backend is running on a different host/port
-    client = FastAPIClient(base_url="http://localhost:8000")
+    client = FastAPIClient(base_url="http://localhost:8080")
     
     # Define the research topic and parameters
     topic = "Kinderarmut in Deutschland"
