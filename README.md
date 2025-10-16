@@ -106,7 +106,7 @@ The UI will be available at http://localhost:5173
 
 ### If Ports Are Already in Use
 
-If you already have services running on ports 8000 and 5173, you can either:
+If you already have services running on ports 8080 and 5173, you can either:
 
 **Option A: Stop existing services and restart**
 ```bash
@@ -220,7 +220,7 @@ curl http://localhost:8080/api/v1/agent-teams/{team_id}
 
 ### Backend API Port
 
-The backend API runs on port **8000** by default.
+The backend API runs on port **8080** by default.
 
 **Configuration methods (in order of precedence):**
 
@@ -323,9 +323,9 @@ app.add_middleware(
 **Problem:** UI shows "Failed to load agent teams: Network Error" and browser console shows CORS error.
 
 **Solution:**
-1. Restart the backend server (Ctrl+C and run `uvicorn api.main:app --reload --port 8000` again)
+1. Restart the backend server (Ctrl+C and run `uvicorn api.main:app --reload --port 8080` again)
 2. The backend CORS config includes ports 5173, 5174, and 3000
-3. Check that backend is running: `curl http://localhost:8000/api/v1/health`
+3. Check that backend is running: `curl http://localhost:8080/api/v1/health`
 
 ### Backend Not Starting
 
