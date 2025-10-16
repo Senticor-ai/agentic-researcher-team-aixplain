@@ -122,10 +122,12 @@ async def run_team_task(team_id: str, topic: str, goals: list):
     Background task to create and run the aixplain team agent
     
     Architecture:
-    - Creates team with built-in micro agents (Mentalist, Inspector, Orchestrator, Response Generator)
-    - Includes user-defined Search Agent with Tavily tool
+    - Creates team with built-in micro agents (Mentalist, Orchestrator, Response Generator)
+    - Includes user-defined Search Agent with Google Search tool
     - Team coordinates research and entity extraction
     - API receives response and formats to JSON-LD
+    
+    Note: Inspector is disabled to avoid response data structure issues
     
     Args:
         team_id: Team ID
@@ -157,8 +159,8 @@ async def run_team_task(team_id: str, topic: str, goals: list):
         # Store team ID
         store.set_aixplain_agent_id(team_id, team.id)
         store.add_log_entry(team_id, f"Team created with ID: {team.id}")
-        store.add_log_entry(team_id, "Team includes: Mentalist, Inspector, Orchestrator, Response Generator (built-in)")
-        store.add_log_entry(team_id, "User-defined agents: Search Agent (Tavily)")
+        store.add_log_entry(team_id, "Team includes: Mentalist, Orchestrator, Response Generator (built-in, no Inspector)")
+        store.add_log_entry(team_id, "User-defined agents: Search Agent (Google Search), Ontology Agent, Validation Agent, Wikipedia Agent")
         logger.info(f"Team {team_id}: Team created with ID: {team.id}")
         
         # Format research prompt
@@ -299,19 +301,28 @@ async def run_team_task(team_id: str, topic: str, goals: list):
         logger.info(f"Team {team_id}: Output: {output_data}")
         logger.info(f"Team {team_id}: Completed: {response_data['completed']}")
         logger.info(f"Team {team_id}: Intermediate Steps Count: {len(intermediate_steps)}")
-        logger.info(f"Team {team_id}: Data Keys: {list(data_dict.keys())}")
-        if 'input' in data_dict:
-            logger.info(f"Team {team_id}: Input: {data_dict['input'][:200]}...")
-        if 'output' in data_dict:
-            logger.info(f"Team {team_id}: Data Output: {data_dict['output']}")
-        if 'critiques' in data_dict:
-            logger.info(f"Team {team_id}: Critiques: {data_dict['critiques']}")
+        if data_dict:
+            logger.info(f"Team {team_id}: Data Keys: {list(data_dict.keys())}")
+            if 'input' in data_dict and data_dict['input']:
+                input_str = str(data_dict['input'])
+                logger.info(f"Team {team_id}: Input: {input_str[:200] if input_str else 'None'}...")
+            if 'output' in data_dict:
+                logger.info(f"Team {team_id}: Data Output: {data_dict['output']}")
+            if 'critiques' in data_dict:
+                logger.info(f"Team {team_id}: Critiques: {data_dict['critiques']}")
+        else:
+            logger.warning(f"Team {team_id}: data_dict is None - response.data may not be available")
         logger.info(f"Team {team_id}: ===== END AGENT RESPONSE =====")
         
         # Check if we got valid output
         if output_data is None:
             store.add_log_entry(team_id, "WARNING: Team returned None output")
+            store.add_log_entry(team_id, "This may indicate:")
+            store.add_log_entry(team_id, "  - Inspector or agent failed during execution")
+            store.add_log_entry(team_id, "  - Tool (Google Search) returned no results")
+            store.add_log_entry(team_id, "  - Agent exceeded token/time limits")
             logger.warning(f"Team {team_id}: Team returned None output")
+            logger.warning(f"Team {team_id}: Response data: {data_dict}")
         elif "error occurred during execution" in str(output_data).lower():
             store.add_log_entry(team_id, f"ERROR: Agent execution failed: {output_data}")
             logger.error(f"Team {team_id}: Agent execution failed: {output_data}")
@@ -395,9 +406,10 @@ async def run_team_task(team_id: str, topic: str, goals: list):
         store.add_log_entry(team_id, f"Error: {str(e)}")
         store.add_log_entry(team_id, "Possible causes:")
         store.add_log_entry(team_id, "  - API key permissions issue")
-        store.add_log_entry(team_id, "  - Tool (Tavily Search) not accessible")
+        store.add_log_entry(team_id, "  - Tool (Google Search) not accessible")
         store.add_log_entry(team_id, "  - Agent configuration error")
         store.add_log_entry(team_id, "  - Network or timeout issue")
+        store.add_log_entry(team_id, "  - Response data structure issue (check if data_dict is None)")
         store.update_team_status(team_id, "failed")
     finally:
         # Clear team context

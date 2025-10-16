@@ -2,8 +2,10 @@
 Team Agent Configuration for Honeycomb OSINT Agent Team System
 
 This module defines team agent configurations using aixplain's TeamAgentFactory.
-The team includes built-in micro agents (Mentalist, Inspector, Orchestrator, Response Generator)
-and user-defined agents (Search Agent with Tavily tool).
+The team includes built-in micro agents (Mentalist, Orchestrator, Response Generator)
+and user-defined agents (Search Agent with Google Search tool).
+
+Note: Inspector is currently disabled due to issues with response data structure.
 """
 import logging
 from typing import Dict, Any, Optional, List
@@ -81,7 +83,7 @@ class TeamConfig:
                 tools.append(google_tool)
             except Exception as e:
                 logger.error(f"Failed to retrieve Google Search tool: {e}")
-                logger.warning("Google Search tool not available - will rely on Tavily only")
+                logger.warning("Google Search tool not available")
         
         if include_wikipedia:
             try:
@@ -226,10 +228,10 @@ class TeamConfig:
     @staticmethod
     def create_search_agent(topic: str, model_id: str = None) -> Any:
         """
-        Create Search Agent (user-defined) with Tavily tool
+        Create Search Agent (user-defined) with Google Search tool
         
         This agent is responsible for:
-        - Using Tavily Search to find information
+        - Using Google Search to find information
         - Extracting Person and Organization entities
         - Returning structured JSON with entities
         
@@ -302,7 +304,7 @@ class TeamConfig:
           - Feedback Combiner: Consolidates inspection feedback
           - Response Generator: Synthesizes final output
         - User-defined agents:
-          - Search Agent: Uses Tavily to research and extract entities
+          - Search Agent: Uses Google Search to research and extract entities
           - Ontology Agent (optional): Suggests schema.org type improvements and relationships
           - Wikipedia Agent (optional): Enriches entities with Wikipedia links and Wikidata IDs
           - Validation Agent (optional): Validates entities for schema.org compliance and URL accessibility
@@ -389,7 +391,7 @@ class TeamConfig:
         # Use only alphanumeric characters (no special chars)
         unique_id = str(uuid.uuid4()).replace('-', '')[:8]
         
-        # Create team with built-in micro agents (NO INSPECTORS - simplified)
+        # Create team with built-in micro agents (NO INSPECTOR - causes execution issues)
         # NOTE: We do NOT define WorkflowTask - let Mentalist plan dynamically
         team = TeamAgentFactory.create(
             name=f"OSINT Team - {sanitized_topic} ({unique_id})",
@@ -398,7 +400,7 @@ class TeamConfig:
             agents=user_agents,  # User-defined agents (no WorkflowTask)
             llm_id=team_model_id,  # Model for micro agents (Mentalist, etc.)
             use_mentalist=True  # Enable Mentalist for dynamic planning
-            # NO inspectors - simplified configuration
+            # NO inspectors - causes issues with response data structure
         )
         
         logger.info(f"Created Team Agent with ID: {team.id}")
@@ -419,7 +421,7 @@ class TeamConfig:
         if wikipedia_agent:
             agent_names += ", Wikipedia Agent (with Wikipedia tool)"
         logger.info(f"User-defined agents: {agent_names}")
-        logger.info(f"Team configuration: Simplified (no inspectors)")
+        logger.info(f"Team configuration: Simplified (no Inspector - avoids response data issues)")
         
         return team
     

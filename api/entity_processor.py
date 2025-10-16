@@ -341,7 +341,7 @@ class EntityProcessor:
                 if "error occurred" in output_text.lower() or "contact your administrator" in output_text.lower():
                     logger.error(f"Agent returned error: {output_text}")
                     logger.error("This might be due to:")
-                    logger.error("  - Tool configuration issues (Tavily Search not accessible)")
+                    logger.error("  - Tool configuration issues (Google Search not accessible)")
                     logger.error("  - API key permissions")
                     logger.error("  - Team agent configuration conflicts")
                     return {"entities": []}
@@ -1493,11 +1493,11 @@ class EntityProcessor:
         Team Agent Flow:
         1. Mentalist plans research strategy (may include MECE decomposition)
         2. Orchestrator routes to Search Agent
-        3. Search Agent uses Tavily to find info and extract entities
-        4. Inspector reviews steps and output
-        5. Feedback Combiner consolidates feedback
-        6. Response Generator creates final output
-        7. API receives response and formats to JSON-LD
+        3. Search Agent uses Google Search to find info and extract entities
+        4. Response Generator creates final output
+        5. API receives response and formats to JSON-LD
+        
+        Note: Inspector is currently disabled due to response data structure issues
         
         Args:
             agent_response: Response from aixplain team agent with extracted entities
@@ -1526,7 +1526,7 @@ class EntityProcessor:
                 logger.warning("No entities extracted from agent response")
                 logger.warning("This could be due to:")
                 logger.warning("  - Agent execution failed or returned empty results")
-                logger.warning("  - Tool (Tavily Search) not accessible or returned no results")
+                logger.warning("  - Tool (Google Search) not accessible or returned no results")
                 logger.warning("  - Agent prompt needs refinement")
                 logger.warning("  - Topic too specific or no information available")
                 

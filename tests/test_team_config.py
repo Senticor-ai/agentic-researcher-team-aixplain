@@ -88,8 +88,8 @@ def test_create_team():
         # Note: agents list may include Wikipedia agent too, so just check search agent is in there
         assert mock_search_agent in call_args.kwargs["agents"]
         assert call_args.kwargs["use_mentalist"] is True
-        assert call_args.kwargs["use_inspector"] is True
-        assert call_args.kwargs["inspector_targets"] == ["steps", "output"]
+        # Inspector is disabled, so should not be in kwargs
+        assert "inspectors" not in call_args.kwargs or call_args.kwargs.get("inspectors") == []
         assert call_args.kwargs["llm_id"] == Config.TEAM_AGENT_MODEL
 
 
