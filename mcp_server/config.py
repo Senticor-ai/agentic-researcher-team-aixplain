@@ -20,7 +20,7 @@ class Config(BaseModel):
     
     # FastAPI Backend Configuration (Required)
     fastapi_base_url: str = Field(
-        default="http://localhost:8000",
+        default="http://localhost:8080",
         description="Base URL for the FastAPI backend"
     )
     
@@ -91,7 +91,7 @@ class Config(BaseModel):
         # Note: Logger may not be configured yet when this is called
         # Actual logging happens in main.py after setup_logging()
         config = cls(
-            fastapi_base_url=os.getenv("FASTAPI_BASE_URL", "http://localhost:8000"),
+            fastapi_base_url=os.getenv("FASTAPI_BASE_URL", "http://localhost:8080"),
             http_timeout=float(os.getenv("HTTP_TIMEOUT", "30.0")),
             server_name=os.getenv("MCP_SERVER_NAME", "librechat-osint-mcp"),
             server_version=os.getenv("MCP_SERVER_VERSION", "0.1.0"),

@@ -197,3 +197,84 @@
     max-height: 400px;
   }
 }
+
+
+/* Enhanced Syntax Highlighting for JSON-LD */
+.json-highlighted {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace;
+}
+
+/* JSON-LD Special Keys */
+.json-key-special {
+  color: #9b59b6;
+  font-weight: 600;
+}
+
+/* Regular Property Keys */
+.json-key {
+  color: #2980b9;
+  font-weight: 500;
+}
+
+/* String Values */
+.json-string {
+  color: #27ae60;
+}
+
+/* Number Values */
+.json-number {
+  color: #e67e22;
+}
+
+/* Boolean Values */
+.json-boolean {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+/* Null Values */
+.json-null {
+  color: #95a5a6;
+  font-style: italic;
+}
+
+/* Entity Type Colors */
+.json-entity-person {
+  color: #3498db;
+  font-weight: 700;
+  background-color: #ebf5fb;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.json-entity-org {
+  color: #e67e22;
+  font-weight: 700;
+  background-color: #fef5e7;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.json-entity-event {
+  color: #9b59b6;
+  font-weight: 700;
+  background-color: #f4ecf7;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.json-entity-topic {
+  color: #16a085;
+  font-weight: 700;
+  background-color: #e8f8f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.json-entity-policy {
+  color: #c0392b;
+  font-weight: 700;
+  background-color: #fadbd8;
+  padding: 2px 4px;
+  border-radius: 3px;
+}

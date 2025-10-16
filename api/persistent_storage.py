@@ -59,7 +59,9 @@ class PersistentAgentTeamStore:
                 ("model_name", "TEXT"),
                 ("duration_seconds", "REAL"),
                 ("git_sha", "TEXT"),
-                ("git_repo_url", "TEXT")
+                ("git_repo_url", "TEXT"),
+                ("raw_agent_response", "TEXT"),
+                ("server_logs", "TEXT")
             ]
             
             for column_name, column_type in new_columns:
@@ -99,6 +101,8 @@ class PersistentAgentTeamStore:
             "duration_seconds": row[15] if len(row) > 15 else None,
             "git_sha": row[16] if len(row) > 16 else None,
             "git_repo_url": row[17] if len(row) > 17 else None,
+            "raw_agent_response": row[18] if len(row) > 18 and row[18] else None,
+            "server_logs": json.loads(row[19]) if len(row) > 19 and row[19] else [],
         }
     
     def create_team(self, topic: str, goals: list, interaction_limit: int, mece_strategy: str, 
@@ -218,6 +222,17 @@ class PersistentAgentTeamStore:
             conn.commit()
             return cursor.rowcount > 0
     
+    def set_raw_agent_response(self, team_id: str, raw_response: str) -> bool:
+        """Set the raw unprocessed agent response for a team"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute("""
+                UPDATE teams 
+                SET raw_agent_response = ?, updated_at = ?
+                WHERE team_id = ?
+            """, (raw_response, self._serialize_datetime(datetime.now(timezone.utc)), team_id))
+            conn.commit()
+            return cursor.rowcount > 0
+    
     def set_sachstand(self, team_id: str, sachstand: dict) -> bool:
         """Set the JSON-LD Sachstand for a team"""
         with sqlite3.connect(self.db_path) as conn:
@@ -237,6 +252,27 @@ class PersistentAgentTeamStore:
                 SET mece_graph = ?, updated_at = ?
                 WHERE team_id = ?
             """, (json.dumps(mece_graph), self._serialize_datetime(datetime.now(timezone.utc)), team_id))
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def add_server_log(self, team_id: str, log_entry: dict) -> bool:
+        """Add a server log entry for a team"""
+        with sqlite3.connect(self.db_path) as conn:
+            # Get current logs
+            cursor = conn.execute("SELECT server_logs FROM teams WHERE team_id = ?", (team_id,))
+            row = cursor.fetchone()
+            if not row:
+                return False
+            
+            current_logs = json.loads(row[0]) if row[0] else []
+            current_logs.append(log_entry)
+            
+            # Update with new log
+            cursor = conn.execute("""
+                UPDATE teams 
+                SET server_logs = ?, updated_at = ?
+                WHERE team_id = ?
+            """, (json.dumps(current_logs), self._serialize_datetime(datetime.now(timezone.utc)), team_id))
             conn.commit()
             return cursor.rowcount > 0
     

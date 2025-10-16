@@ -1,0 +1,223 @@
+{
+  "team_structure": "Built-in micro agents + User-defined agents",
+  "built_in_agents": [
+    {
+      "name": "Mentalist",
+      "role": "Strategic Planner",
+      "description": "Analyzes the research topic and creates a dynamic research strategy using MECE decomposition for complex topics. Plans on-the-fly without following a fixed workflow, adapting to the specific needs of each research request.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "capabilities": [
+        "Topic analysis and complexity assessment",
+        "MECE (Mutually Exclusive, Collectively Exhaustive) decomposition",
+        "Dynamic research strategy planning",
+        "Agent task coordination",
+        "Adaptive workflow generation"
+      ]
+    },
+    {
+      "name": "Inspector",
+      "role": "Quality Monitor",
+      "description": "Reviews intermediate steps and final output to ensure quality, accuracy, and completeness. Provides feedback throughout execution to maintain high standards and catch issues early.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "capabilities": [
+        "Intermediate step quality review",
+        "Final output validation",
+        "Accuracy and completeness checking",
+        "Entity quality assessment",
+        "Source verification"
+      ]
+    },
+    {
+      "name": "Orchestrator",
+      "role": "Agent Spawner & Task Router",
+      "description": "Routes tasks to appropriate agents based on the Mentalist's dynamic plan. Spawns Search Agents, Wikipedia Agents, and other specialized agents as needed, managing their execution and collecting results.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "capabilities": [
+        "Dynamic agent spawning",
+        "Task routing and distribution",
+        "Agent execution management",
+        "Result collection and aggregation",
+        "Parallel task coordination"
+      ]
+    },
+    {
+      "name": "Feedback Combiner",
+      "role": "Feedback Aggregator",
+      "description": "Consolidates inspection feedback from multiple reviewers and inspection points. Synthesizes feedback into actionable insights for improving output quality and addressing identified issues.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "capabilities": [
+        "Multi-source feedback aggregation",
+        "Feedback prioritization",
+        "Actionable insight generation",
+        "Quality improvement recommendations",
+        "Issue tracking and resolution"
+      ]
+    },
+    {
+      "name": "Response Generator",
+      "role": "Output Synthesizer",
+      "description": "Creates the final structured JSON-LD Sachstand output from all agent results. Synthesizes information from Search Agents, Wikipedia Agents, and other sources into a cohesive, well-formatted report.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "capabilities": [
+        "Multi-agent result synthesis",
+        "JSON-LD Sachstand generation",
+        "Entity deduplication and merging",
+        "Source attribution and citation",
+        "Structured output formatting"
+      ]
+    }
+  ],
+  "user_defined_agents": [
+    {
+      "name": "Search Agent",
+      "role": "OSINT Research & Entity Extraction",
+      "description": "Researches topics using web search tools and extracts Person, Organization, Event, Topic, and Policy entities. Uses Tavily Search as primary tool with Google Search as backup for comprehensive coverage.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "tools": [
+        "Tavily Search",
+        "Google Search"
+      ],
+      "capabilities": [
+        "Multi-source web search (Tavily + Google)",
+        "Person and Organization entity extraction",
+        "Event and Policy entity discovery",
+        "Real source URLs with excerpts",
+        "German and English language support",
+        "Government and official source prioritization",
+        "Immediate URL validation with Validation Agent"
+      ],
+      "search_strategy": "Tavily primary, Google backup for German regional topics"
+    },
+    {
+      "name": "Wikipedia Agent",
+      "role": "Entity Enrichment & Verification",
+      "description": "Enriches extracted entities with Wikipedia links and Wikidata IDs. Retrieves Wikipedia articles in multiple languages (de, en, fr) and validates schema.org compliance immediately after enrichment.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "tools": [
+        "Wikipedia"
+      ],
+      "capabilities": [
+        "Wikipedia entity verification and lookup",
+        "Multi-language Wikipedia URL retrieval (de, en, fr)",
+        "Wikidata ID extraction for authoritative linking",
+        "sameAs property generation for deduplication",
+        "Schema.org compliant output format",
+        "Immediate validation with Validation Agent"
+      ],
+      "languages_supported": [
+        "de",
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "name": "Validation Agent",
+      "role": "Quality Assurance & Compliance",
+      "description": "Validates entities for schema.org compliance and URL accessibility. Called on-demand by Search Agent and Wikipedia Agent to ensure high-quality, validated entities throughout the workflow.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "tools": [
+        "Schema.org Validator",
+        "URL Verifier"
+      ],
+      "capabilities": [
+        "Schema.org compliance validation",
+        "URL format and accessibility verification",
+        "Quality score calculation",
+        "Validation feedback and corrections",
+        "On-demand validation for any agent",
+        "Proactive entity pool monitoring"
+      ]
+    },
+    {
+      "name": "Ontology Agent",
+      "role": "Schema.org Expert & Semantic Enrichment",
+      "description": "Suggests more specific schema.org types and relationship properties for entities. Uses built-in schema.org knowledge to improve semantic richness and ensure consistency across the entity pool.",
+      "model": "Llama 3.3 70B Versatile (Groq)",
+      "tools": [],
+      "capabilities": [
+        "Schema.org type improvement suggestions",
+        "Relationship property recommendations",
+        "Semantic consistency checking",
+        "Entity type mapping (Person, Organization, etc.)",
+        "Additional property suggestions",
+        "No external tools needed - uses built-in knowledge"
+      ]
+    }
+  ],
+  "configured_tools": {
+    "tavily_search": {
+      "name": "Tavily Search",
+      "id": "6736411cf127849667606689"
+    },
+    "google_search": {
+      "name": "Google Search",
+      "id": "65c51c556eb563350f6e1bb1"
+    },
+    "wikipedia": {
+      "name": "Wikipedia",
+      "id": "6633fd59821ee31dd914e232"
+    }
+  },
+  "default_model": "Llama 3.3 70B Versatile (Groq)",
+  "model_id": "677c16166eb563bb611623c1",
+  "coordination": {
+    "approach": "Dynamic Planning",
+    "description": "No predefined workflow - agents coordinate dynamically based on the research needs",
+    "roles": [
+      {
+        "agent": "Mentalist",
+        "responsibility": "Analyzes topic and creates dynamic research strategy",
+        "note": "Plans on-the-fly, not following a fixed workflow"
+      },
+      {
+        "agent": "Orchestrator",
+        "responsibility": "Routes tasks to appropriate agents based on Mentalist's plan",
+        "note": "Spawns agents as needed, not in a predetermined sequence"
+      },
+      {
+        "agent": "Search Agent",
+        "responsibility": "Researches topics and extracts entities using Tavily + Google Search",
+        "note": "Calls Validation Agent immediately to validate URLs"
+      },
+      {
+        "agent": "Validation Agent",
+        "responsibility": "Validates URLs and schema.org compliance on-demand",
+        "note": "Called by Search Agent and Wikipedia Agent for immediate validation"
+      },
+      {
+        "agent": "Wikipedia Agent",
+        "responsibility": "Enriches entities with Wikipedia links and Wikidata IDs",
+        "note": "Calls Validation Agent to ensure schema.org compliance"
+      },
+      {
+        "agent": "Ontology Agent",
+        "responsibility": "Suggests schema.org type improvements and relationships",
+        "note": "Provides semantic enrichment recommendations"
+      },
+      {
+        "agent": "Inspector",
+        "responsibility": "Reviews steps and output for quality",
+        "note": "Provides feedback throughout execution"
+      },
+      {
+        "agent": "Feedback Combiner",
+        "responsibility": "Aggregates inspection feedback",
+        "note": "Consolidates reviews from multiple inspection points"
+      },
+      {
+        "agent": "Response Generator",
+        "responsibility": "Synthesizes final output from all agent results",
+        "note": "Creates structured JSON-LD Sachstand"
+      }
+    ]
+  },
+  "default_settings": {
+    "interaction_limit": 50,
+    "mece_strategy": "depth_first",
+    "inspector_targets": [
+      "steps",
+      "output"
+    ],
+    "num_inspectors": 1
+  }
+}

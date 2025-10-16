@@ -51,7 +51,7 @@ The MCP server is configured via environment variables. You can set these in you
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `FASTAPI_BASE_URL` | Base URL for the FastAPI backend | `http://localhost:8000` | Yes |
+| `FASTAPI_BASE_URL` | Base URL for the FastAPI backend | `http://localhost:8080` | Yes |
 | `HTTP_TIMEOUT` | HTTP request timeout in seconds | `30.0` | No |
 | `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | `INFO` | No |
 | `MCP_SERVER_NAME` | MCP server name | `librechat-osint-mcp` | No |
@@ -63,7 +63,7 @@ Create a `.env` file in the `mcp_server` directory:
 
 ```bash
 # FastAPI Backend
-FASTAPI_BASE_URL=http://localhost:8000
+FASTAPI_BASE_URL=http://localhost:8080
 
 # HTTP Client Configuration
 HTTP_TIMEOUT=30.0

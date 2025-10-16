@@ -31,6 +31,7 @@ from api.persistent_storage import get_store  # Changed from api.storage
 from api.team_config import TeamConfig
 from api.entity_processor import EntityProcessor
 from api.search_strategy import generate_feedback
+from api.team_log_handler import TeamLogHandler, set_team_context, clear_team_context
 
 # Configure logging
 logging.basicConfig(
@@ -38,6 +39,12 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Add team log handler to capture logs per team
+store = get_store()
+team_log_handler = TeamLogHandler(store)
+team_log_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logging.getLogger().addHandler(team_log_handler)
 
 
 def get_git_info():
@@ -127,6 +134,9 @@ async def run_team_task(team_id: str, topic: str, goals: list):
     """
     store = get_store()
     
+    # Set team context for logging
+    set_team_context(team_id)
+    
     try:
         # Update status to running
         store.update_team_status(team_id, "running")
@@ -162,6 +172,29 @@ async def run_team_task(team_id: str, topic: str, goals: list):
         import asyncio
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(None, team.run, prompt)
+        
+        # Store the completely raw response first (before any processing)
+        raw_response_str = str(response)
+        if hasattr(response, '__dict__'):
+            try:
+                # Try to get a more structured raw representation
+                raw_dict = {}
+                for key, value in response.__dict__.items():
+                    if not key.startswith('_') and not callable(value):
+                        try:
+                            # Try to serialize the value
+                            if hasattr(value, '__dict__'):
+                                raw_dict[key] = {k: str(v) for k, v in value.__dict__.items() if not k.startswith('_')}
+                            else:
+                                raw_dict[key] = str(value)
+                        except:
+                            raw_dict[key] = str(value)
+                raw_response_str = json.dumps(raw_dict, indent=2)
+            except:
+                raw_response_str = str(response)
+        
+        store.set_raw_agent_response(team_id, raw_response_str)
+        logger.info(f"Team {team_id}: Stored raw agent response ({len(raw_response_str)} chars)")
         
         # Try to extract request_id for polling intermediate status
         request_id = None
@@ -261,10 +294,27 @@ async def run_team_task(team_id: str, topic: str, goals: list):
         }
         store.set_agent_response(team_id, response_data)
         
+        # Log the full agent response for debugging
+        logger.info(f"Team {team_id}: ===== FULL AGENT RESPONSE =====")
+        logger.info(f"Team {team_id}: Output: {output_data}")
+        logger.info(f"Team {team_id}: Completed: {response_data['completed']}")
+        logger.info(f"Team {team_id}: Intermediate Steps Count: {len(intermediate_steps)}")
+        logger.info(f"Team {team_id}: Data Keys: {list(data_dict.keys())}")
+        if 'input' in data_dict:
+            logger.info(f"Team {team_id}: Input: {data_dict['input'][:200]}...")
+        if 'output' in data_dict:
+            logger.info(f"Team {team_id}: Data Output: {data_dict['output']}")
+        if 'critiques' in data_dict:
+            logger.info(f"Team {team_id}: Critiques: {data_dict['critiques']}")
+        logger.info(f"Team {team_id}: ===== END AGENT RESPONSE =====")
+        
         # Check if we got valid output
         if output_data is None:
             store.add_log_entry(team_id, "WARNING: Team returned None output")
             logger.warning(f"Team {team_id}: Team returned None output")
+        elif "error occurred during execution" in str(output_data).lower():
+            store.add_log_entry(team_id, f"ERROR: Agent execution failed: {output_data}")
+            logger.error(f"Team {team_id}: Agent execution failed: {output_data}")
         else:
             store.add_log_entry(team_id, f"Team completed successfully")
             logger.info(f"Team {team_id}: Team completed successfully")
@@ -349,6 +399,9 @@ async def run_team_task(team_id: str, topic: str, goals: list):
         store.add_log_entry(team_id, "  - Agent configuration error")
         store.add_log_entry(team_id, "  - Network or timeout issue")
         store.update_team_status(team_id, "failed")
+    finally:
+        # Clear team context
+        clear_team_context()
 
 
 @app.post("/api/v1/agent-teams", response_model=AgentTeamResponse)
@@ -606,6 +659,35 @@ async def get_agent_trace(team_id: str):
     }
 
 
+@app.get("/api/v1/agent-teams/{team_id}/raw-response")
+async def get_raw_agent_response(team_id: str):
+    """Get the complete raw agent response for debugging and analysis"""
+    store = get_store()
+    team = store.get_team(team_id)
+    
+    if not team:
+        raise HTTPException(status_code=404, detail=f"Agent team {team_id} not found")
+    
+    agent_response = team.get("agent_response")
+    if not agent_response:
+        raise HTTPException(status_code=404, detail=f"No agent response available for team {team_id}")
+    
+    # Return the complete raw response with all fields
+    return {
+        "team_id": team_id,
+        "topic": team.get("topic"),
+        "status": team.get("status"),
+        "created_at": team.get("created_at"),
+        "updated_at": team.get("updated_at"),
+        "execution_log": team.get("execution_log", []),
+        "server_logs": team.get("server_logs", []),  # Server console logs
+        "raw_agent_response": team.get("raw_agent_response"),  # Completely unprocessed response
+        "agent_response": agent_response,  # Processed/formatted response
+        "sachstand": team.get("sachstand"),
+        "mece_graph": team.get("mece_graph")
+    }
+
+
 def get_agent_configuration():
     """
     Get agent configuration from team_config
@@ -702,68 +784,94 @@ def get_agent_configuration():
         }
     ]
     
-    # User-defined agents (dynamically configured based on available tools)
-    # Each tool gets its own card
+    # User-defined agents (actual agents with their tools)
     user_defined_agents = []
     
-    # Tavily Search Tool
+    # Search Agent (has Tavily + Google Search tools)
+    search_tools = []
     if "tavily_search" in configured_tools:
-        user_defined_agents.append({
-            "name": "Tavily Search",
-            "role": "AI-Optimized Web Search",
-            "tool_id": configured_tools["tavily_search"]["id"],
-            "description": "AI-optimized web search tool designed for research agents. Provides high-quality, curated search results with focus on relevance and accuracy. Primary search tool for OSINT research and entity extraction.",
-            "model": model_name,
-            "capabilities": [
-                "AI-optimized web search with curated results",
-                "High relevance and accuracy filtering",
-                "Person and Organization entity discovery",
-                "Real source URLs and excerpts",
-                "German and English language support",
-                "Government and official source prioritization"
-            ],
-            "used_by": "Search Agent"
-        })
-    
-    # Google Search Tool
+        search_tools.append("Tavily Search")
     if "google_search" in configured_tools:
+        search_tools.append("Google Search")
+    
+    if search_tools:
         user_defined_agents.append({
-            "name": "Google Search",
-            "role": "Comprehensive Web Search",
-            "tool_id": configured_tools["google_search"]["id"],
-            "description": "Comprehensive web search powered by Google via Scale SERP. Provides broad coverage across the entire web with deep indexing of government sites, official sources, and regional content. Excellent for German regional topics.",
+            "name": "Search Agent",
+            "role": "OSINT Research & Entity Extraction",
+            "description": "Researches topics using web search tools and extracts Person, Organization, Event, Topic, and Policy entities. Uses Tavily Search as primary tool with Google Search as backup for comprehensive coverage.",
             "model": model_name,
+            "tools": search_tools,
             "capabilities": [
-                "Comprehensive web coverage and deep indexing",
-                "Excellent German regional content coverage",
-                "Government and official website indexing",
-                "Historical and archived content access",
-                "Broad source diversity",
-                "Regional and local organization discovery"
+                "Multi-source web search (Tavily + Google)",
+                "Person and Organization entity extraction",
+                "Event and Policy entity discovery",
+                "Real source URLs with excerpts",
+                "German and English language support",
+                "Government and official source prioritization",
+                "Immediate URL validation with Validation Agent"
             ],
-            "used_by": "Search Agent",
-            "cost_per_request": "$0.0008"
+            "search_strategy": "Tavily primary, Google backup for German regional topics"
         })
     
-    # Wikipedia Tool
+    # Wikipedia Agent (has Wikipedia tool)
     if "wikipedia" in configured_tools:
         user_defined_agents.append({
-            "name": "Wikipedia",
+            "name": "Wikipedia Agent",
             "role": "Entity Enrichment & Verification",
-            "tool_id": configured_tools["wikipedia"]["id"],
-            "description": "Wikipedia API for entity verification, enrichment, and authoritative linking. Retrieves Wikipedia articles in multiple languages and extracts Wikidata IDs for entity deduplication and cross-referencing.",
+            "description": "Enriches extracted entities with Wikipedia links and Wikidata IDs. Retrieves Wikipedia articles in multiple languages (de, en, fr) and validates schema.org compliance immediately after enrichment.",
             "model": model_name,
+            "tools": ["Wikipedia"],
             "capabilities": [
                 "Wikipedia entity verification and lookup",
                 "Multi-language Wikipedia URL retrieval (de, en, fr)",
                 "Wikidata ID extraction for authoritative linking",
                 "sameAs property generation for deduplication",
-                "Entity cross-referencing and validation",
-                "Authoritative source attribution"
+                "Schema.org compliant output format",
+                "Immediate validation with Validation Agent"
             ],
-            "languages_supported": ["de", "en", "fr"],
-            "used_by": "Wikipedia Agent"
+            "languages_supported": ["de", "en", "fr"]
         })
+    
+    # Validation Agent (has Schema.org Validator + URL Verifier tools)
+    validation_tools = []
+    if Config.TOOL_IDS.get("schema_validator"):
+        validation_tools.append("Schema.org Validator")
+    if Config.TOOL_IDS.get("url_verifier"):
+        validation_tools.append("URL Verifier")
+    
+    if validation_tools:
+        user_defined_agents.append({
+            "name": "Validation Agent",
+            "role": "Quality Assurance & Compliance",
+            "description": "Validates entities for schema.org compliance and URL accessibility. Called on-demand by Search Agent and Wikipedia Agent to ensure high-quality, validated entities throughout the workflow.",
+            "model": model_name,
+            "tools": validation_tools,
+            "capabilities": [
+                "Schema.org compliance validation",
+                "URL format and accessibility verification",
+                "Quality score calculation",
+                "Validation feedback and corrections",
+                "On-demand validation for any agent",
+                "Proactive entity pool monitoring"
+            ]
+        })
+    
+    # Ontology Agent (no tools - uses built-in knowledge)
+    user_defined_agents.append({
+        "name": "Ontology Agent",
+        "role": "Schema.org Expert & Semantic Enrichment",
+        "description": "Suggests more specific schema.org types and relationship properties for entities. Uses built-in schema.org knowledge to improve semantic richness and ensure consistency across the entity pool.",
+        "model": model_name,
+        "tools": [],
+        "capabilities": [
+            "Schema.org type improvement suggestions",
+            "Relationship property recommendations",
+            "Semantic consistency checking",
+            "Entity type mapping (Person, Organization, etc.)",
+            "Additional property suggestions",
+            "No external tools needed - uses built-in knowledge"
+        ]
+    })
     
     return {
         "team_structure": "Built-in micro agents + User-defined agents",
@@ -788,13 +896,23 @@ def get_agent_configuration():
                 },
                 {
                     "agent": "Search Agent",
-                    "responsibility": "Executes research tasks when called by Orchestrator",
-                    "note": "May be invoked multiple times for different aspects"
+                    "responsibility": "Researches topics and extracts entities using Tavily + Google Search",
+                    "note": "Calls Validation Agent immediately to validate URLs"
+                },
+                {
+                    "agent": "Validation Agent",
+                    "responsibility": "Validates URLs and schema.org compliance on-demand",
+                    "note": "Called by Search Agent and Wikipedia Agent for immediate validation"
                 },
                 {
                     "agent": "Wikipedia Agent",
-                    "responsibility": "Enriches extracted entities with Wikipedia links and Wikidata IDs",
-                    "note": "Called after entity extraction to add authoritative references"
+                    "responsibility": "Enriches entities with Wikipedia links and Wikidata IDs",
+                    "note": "Calls Validation Agent to ensure schema.org compliance"
+                },
+                {
+                    "agent": "Ontology Agent",
+                    "responsibility": "Suggests schema.org type improvements and relationships",
+                    "note": "Provides semantic enrichment recommendations"
                 },
                 {
                     "agent": "Inspector",

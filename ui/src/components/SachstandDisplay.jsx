@@ -10,6 +10,63 @@ function SachstandDisplay({ sachstand, teamStatus, teamId }) {
     return JSON.stringify(obj, null, 2);
   };
 
+  // Syntax highlight JSON with entity colors
+  const highlightJSON = (jsonString) => {
+    // Split into lines for processing
+    const lines = jsonString.split('\n');
+    const highlighted = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let highlightedLine = line;
+      
+      // Highlight entity types with colors
+      if (line.includes('"@type"')) {
+        if (line.includes('Person')) {
+          highlightedLine = line.replace(/"Person"/, '<span class="json-entity-person">"Person"</span>');
+        } else if (line.includes('Organization') || line.includes('GovernmentOrganization')) {
+          highlightedLine = line.replace(/"(Government)?Organization"/, '<span class="json-entity-org">"$1Organization"</span>');
+        } else if (line.includes('Event') || line.includes('ConferenceEvent')) {
+          highlightedLine = line.replace(/"(Conference)?Event"/, '<span class="json-entity-event">"$1Event"</span>');
+        } else if (line.includes('Topic') || line.includes('Thing')) {
+          highlightedLine = line.replace(/"(Topic|Thing)"/, '<span class="json-entity-topic">"$1"</span>');
+        } else if (line.includes('Policy') || line.includes('Legislation')) {
+          highlightedLine = line.replace(/"(Policy|Legislation)"/, '<span class="json-entity-policy">"$1"</span>');
+        }
+      }
+      
+      // Highlight special JSON-LD keys
+      highlightedLine = highlightedLine.replace(/"@context":/g, '<span class="json-key-special">"@context":</span>');
+      highlightedLine = highlightedLine.replace(/"@type":/g, '<span class="json-key-special">"@type":</span>');
+      highlightedLine = highlightedLine.replace(/"@id":/g, '<span class="json-key-special">"@id":</span>');
+      
+      // Highlight property names (keys)
+      highlightedLine = highlightedLine.replace(/"([^"]+)":/g, (match, key) => {
+        if (match.includes('class="json-key-special"')) return match; // Already highlighted
+        return `<span class="json-key">"${key}":</span>`;
+      });
+      
+      // Highlight string values
+      highlightedLine = highlightedLine.replace(/: "([^"]*)"/g, (match, value) => {
+        if (match.includes('class="json-')) return match; // Already highlighted
+        return `: <span class="json-string">"${value}"</span>`;
+      });
+      
+      // Highlight numbers
+      highlightedLine = highlightedLine.replace(/: (\d+\.?\d*)/g, ': <span class="json-number">$1</span>');
+      
+      // Highlight booleans
+      highlightedLine = highlightedLine.replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>');
+      
+      // Highlight null
+      highlightedLine = highlightedLine.replace(/: null/g, ': <span class="json-null">null</span>');
+      
+      highlighted.push(highlightedLine);
+    }
+    
+    return highlighted.join('\n');
+  };
+
   const validateJSONLD = (data) => {
     if (!data) return { valid: false, message: 'No data' };
     
@@ -225,15 +282,21 @@ function SachstandDisplay({ sachstand, teamStatus, teamId }) {
 
         <Collapse isOpen={isExpanded}>
           <div className="json-viewer">
-            <pre className="json-content">{formatJSON(sachstand)}</pre>
+            <pre 
+              className="json-content json-highlighted" 
+              dangerouslySetInnerHTML={{ __html: highlightJSON(formatJSON(sachstand)) }}
+            />
           </div>
         </Collapse>
 
         {!isExpanded && (
           <div className="json-preview">
-            <pre className="json-content">{formatJSON(sachstand).split('\n').slice(0, 10).join('\n')}
-...
-(Click "Expand" to see full document)</pre>
+            <pre 
+              className="json-content json-highlighted" 
+              dangerouslySetInnerHTML={{ 
+                __html: highlightJSON(formatJSON(sachstand).split('\n').slice(0, 10).join('\n')) + '\n...\n(Click "Expand" to see full document)'
+              }}
+            />
           </div>
         )}
       </div>

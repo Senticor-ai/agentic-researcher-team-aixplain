@@ -51,6 +51,9 @@ class Config:
         "tavily_search": "6736411cf127849667606689",  # Tavily Search API
         "wikipedia": "6633fd59821ee31dd914e232",      # Wikipedia
         "google_search": "65c51c556eb563350f6e1bb1",   # Google Search (Scale SERP)
+        # Validation tools (registered with aixplain)
+        "schema_validator": "68f0fdae56dba95043000e07",  # Schema.org Validator
+        "url_verifier": "68f0fdb0a1a609715ed6bb4e",       # URL Verifier
     }
     
     # Agent Instructions Directory

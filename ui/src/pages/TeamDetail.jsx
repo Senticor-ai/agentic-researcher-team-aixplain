@@ -13,7 +13,6 @@ import {
   Collapse
 } from '@blueprintjs/core';
 import { agentTeamsAPI } from '../api/client';
-import EntitiesDisplay from '../components/EntitiesDisplay';
 import SachstandDisplay from '../components/SachstandDisplay';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import './TeamDetail.css';
@@ -472,17 +471,54 @@ function TeamDetail() {
             )}
             {/* Show entity count for completed teams */}
             {(team.status === 'completed' || team.status === 'failed') && (
-              <div className="metadata-item">
-                <span className="metadata-label">Entities Extracted:</span>
-                <Tag 
-                  large 
-                  intent={
-                    team.sachstand?.hasPart?.length > 0 ? Intent.SUCCESS : Intent.WARNING
-                  }
-                  icon={team.sachstand?.hasPart?.length > 0 ? "tick-circle" : "warning-sign"}
-                >
-                  {team.sachstand?.hasPart?.length || 0}
-                </Tag>
+              <div className="metadata-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="metadata-label">Extracted Entities:</span>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Tag 
+                    large 
+                    intent={
+                      team.sachstand?.hasPart?.length > 0 ? Intent.SUCCESS : Intent.WARNING
+                    }
+                    icon={team.sachstand?.hasPart?.length > 0 ? "tick-circle" : "warning-sign"}
+                  >
+                    {team.sachstand?.hasPart?.length || 0} Total
+                  </Tag>
+                  {team.sachstand?.hasPart?.length > 0 && (() => {
+                    // Count entities by type
+                    const typeCounts = {};
+                    team.sachstand.hasPart.forEach(entity => {
+                      const type = entity['@type'] || 'Unknown';
+                      typeCounts[type] = (typeCounts[type] || 0) + 1;
+                    });
+                    
+                    // Define colors for each type
+                    const typeColors = {
+                      'Person': '#3498db',
+                      'Organization': '#e67e22',
+                      'GovernmentOrganization': '#e67e22',
+                      'Event': '#9b59b6',
+                      'ConferenceEvent': '#9b59b6',
+                      'Topic': '#16a085',
+                      'Thing': '#16a085',
+                      'Policy': '#c0392b',
+                      'Legislation': '#c0392b'
+                    };
+                    
+                    return Object.entries(typeCounts).map(([type, count]) => (
+                      <Tag 
+                        key={type}
+                        minimal
+                        style={{ 
+                          backgroundColor: `${typeColors[type] || '#95a5a6'}15`,
+                          color: typeColors[type] || '#95a5a6',
+                          fontWeight: 600
+                        }}
+                      >
+                        {type}: {count}
+                      </Tag>
+                    ));
+                  })()}
+                </div>
               </div>
             )}
           </div>
@@ -517,6 +553,39 @@ function TeamDetail() {
             </div>
           )}
           
+          {/* Download Raw Execution Trace */}
+          <div className="metadata-section">
+            <h4>Debug & Analysis</h4>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <Button
+                icon="download"
+                intent={Intent.PRIMARY}
+                onClick={async () => {
+                  try {
+                    const response = await agentTeamsAPI.getRawResponse(teamId);
+                    const dataStr = JSON.stringify(response.data, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `raw_execution_trace_${teamId}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                  } catch (err) {
+                    console.error('Failed to download raw trace:', err);
+                  }
+                }}
+              >
+                Download Complete Debug Data
+              </Button>
+            </div>
+            <p style={{ fontSize: '0.9em', color: '#666', marginTop: '0.5rem' }}>
+              Includes: raw agent response, server logs, execution log, sachstand, and MECE graph
+            </p>
+          </div>
+
           {/* Budget Tracking */}
           <div className="metadata-section budget-tracking">
             <h4>Budget Tracking</h4>
@@ -607,14 +676,7 @@ function TeamDetail() {
           </Card>
         )}
 
-        {/* Results Section - Show first for better UX */}
-        <EntitiesDisplay 
-          entities={team.sachstand?.hasPart || []}
-          isLoading={team.status === 'pending' || team.status === 'running'}
-          teamStatus={team.status}
-          onRetry={() => navigate('/')}
-        />
-
+        {/* Results Section */}
         <SachstandDisplay 
           sachstand={team.sachstand}
           teamStatus={team.status}
@@ -676,6 +738,73 @@ function TeamDetail() {
             )}
           </div>
         </Card>
+
+        {/* Server Logs Section */}
+        {team.server_logs && team.server_logs.length > 0 && (
+          <Card className="content-section">
+            <div className="section-header">
+              <h3>Server Logs</h3>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button
+                  small
+                  icon="download"
+                  onClick={() => {
+                    const dataStr = JSON.stringify(team.server_logs, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `server_logs_${teamId}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download
+                </Button>
+              </div>
+            </div>
+            <div className="log-container">
+              <ul className="log-list">
+                {team.server_logs.map((entry, index) => (
+                  <li 
+                    key={index} 
+                    className={`log-entry log-level-${entry.level?.toLowerCase() || 'info'}`}
+                  >
+                    <div className="log-header">
+                      {entry.timestamp && (
+                        <span className="log-timestamp">
+                          {new Date(entry.timestamp).toLocaleTimeString()}
+                        </span>
+                      )}
+                      {entry.logger && (
+                        <span className="log-agent">[{entry.logger}]</span>
+                      )}
+                      <Tag 
+                        minimal 
+                        intent={
+                          entry.level === 'ERROR' ? Intent.DANGER :
+                          entry.level === 'WARNING' ? Intent.WARNING :
+                          entry.level === 'INFO' ? Intent.PRIMARY :
+                          Intent.NONE
+                        }
+                      >
+                        {entry.level || 'INFO'}
+                      </Tag>
+                      {entry.module && (
+                        <span className="log-module" style={{ fontSize: '0.85em', color: '#888' }}>
+                          {entry.module}.{entry.function}:{entry.line}
+                        </span>
+                      )}
+                    </div>
+                    <div className="log-message">{entry.message}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Card>
+        )}
 
         <Card className="content-section">
           <h3>Agent Configuration & Execution Stats</h3>
